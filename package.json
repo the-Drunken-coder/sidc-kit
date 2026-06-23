@@ -1,0 +1,40 @@
+{
+  "name": "sidc-kit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A small TypeScript toolkit for searching, explaining, building, and rendering curated SIDCs.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "keywords": [
+    "sidc",
+    "military-symbols",
+    "mil-std-2525",
+    "app-6",
+    "milsymbol"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "milsymbol": "^3.0.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
