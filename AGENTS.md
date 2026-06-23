@@ -5,3 +5,5 @@ Prefer simple, elegant solutions over complex ones.
 The role of this file is to describe common mistakes and confusion points that agents might encounter as they work in this project.
 
 If you encounter something surprising, tell the developer and add the lesson here so future agents do not rediscover the same failure.
+
+- For number-based MIL-STD-2525D/APP-6D SIDCs rendered by `milsymbol`, digits 9-10 are the echelon/mobility field and digits 11-20 are the function ID. Keep curated land-unit fixtures aligned with `milsymbol`'s number-SIDC metadata and land-unit function table.
