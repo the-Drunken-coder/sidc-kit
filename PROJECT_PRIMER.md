@@ -107,7 +107,7 @@ For early versions, prefer simple lexical search and deterministic generated fix
 
 Reverse lookup should start with generated canonical fixtures:
 
-1. Generate normalized SVG/PNG images from known SIDCs.
+1. Generate normalized SVG and PNG images from known SIDCs.
 2. Normalize incoming images for size, padding, colors, and stroke width.
 3. Compare against known renderings.
 4. Return ranked candidates with evidence.

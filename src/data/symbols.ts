@@ -38,7 +38,7 @@ export const curatedSymbols = [
     }
   },
   {
-    sidc: "130310001412120000000000000000",
+    sidc: "130310001512110000000000000000",
     name: "Friendly Land Unit Infantry Company",
     aliases: [
       "friendly infantry company",
@@ -76,7 +76,7 @@ export const curatedSymbols = [
     }
   },
   {
-    sidc: "130310001713110000000000000000",
+    sidc: "130310001412050000000000000000",
     name: "Friendly Land Unit Armor Platoon",
     aliases: [
       "friendly armor platoon",
@@ -96,7 +96,7 @@ export const curatedSymbols = [
     }
   },
   {
-    sidc: "130310001513110000000000000000",
+    sidc: "130310001413030000000000000000",
     name: "Friendly Land Unit Artillery Platoon",
     aliases: [
       "friendly artillery platoon",
@@ -115,7 +115,7 @@ export const curatedSymbols = [
     }
   },
   {
-    sidc: "130310001313110000000000000000",
+    sidc: "130310001412130000000000000000",
     name: "Friendly Land Unit Reconnaissance Platoon",
     aliases: [
       "friendly reconnaissance platoon",

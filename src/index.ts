@@ -48,6 +48,8 @@ export type BuildSidcInput = Partial<Omit<SymbolParts, "standard" | "status" | "
 };
 
 const sidcPattern = /^\d{30}$/;
+const disambiguatingPartKeys = ["entityType", "entitySubtype", "echelon"] as const;
+type DisambiguatingPartKey = (typeof disambiguatingPartKeys)[number];
 
 export function renderSymbol(sidc: string, options: RenderSymbolOptions = {}): RenderSymbolResult {
   const normalizedSidc = normalizeSidc(sidc);
@@ -119,7 +121,10 @@ export function buildSidc(parts: BuildSidcInput): string {
   if (matches.length > 1) {
     throw new SidcKitError(
       "AMBIGUOUS_COMBINATION",
-      `Multiple curated SIDCs match affiliation=${parts.affiliation}, domain=${parts.domain}, entity=${parts.entity}. Add more parts such as echelon.`
+      `Multiple curated SIDCs match affiliation=${parts.affiliation}, domain=${parts.domain}, entity=${parts.entity}. ${buildAmbiguitySuggestion(
+        wanted,
+        matches
+      )}`
     );
   }
 
@@ -188,6 +193,31 @@ function normalizeParts(parts: BuildSidcInput | SymbolParts): Record<string, str
     }
     return normalized;
   }, {});
+}
+
+function buildAmbiguitySuggestion(wanted: Record<string, string>, matches: readonly CuratedSymbol[]): string {
+  const helpfulKeys = disambiguatingPartKeys.filter((key) => !wanted[key] && hasVariation(matches, key));
+  if (helpfulKeys.length === 0) {
+    return "The provided parts are still ambiguous.";
+  }
+
+  return `Add ${formatPartList(helpfulKeys)}.`;
+}
+
+function hasVariation(matches: readonly CuratedSymbol[], key: DisambiguatingPartKey): boolean {
+  return new Set(matches.map((match) => normalizeParts(match.parts)[key] ?? "")).size > 1;
+}
+
+function formatPartList(parts: readonly string[]): string {
+  if (parts.length === 1) {
+    return parts[0];
+  }
+
+  if (parts.length === 2) {
+    return `${parts[0]} or ${parts[1]}`;
+  }
+
+  return `${parts.slice(0, -1).join(", ")}, or ${parts[parts.length - 1]}`;
 }
 
 function toPoint(value: unknown): RenderSymbolResult["anchor"] {

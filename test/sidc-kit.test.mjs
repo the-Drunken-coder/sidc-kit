@@ -10,6 +10,10 @@ import {
 } from "../dist/index.js";
 
 const infantryPlatoonSidc = "130310001412110000000000000000";
+const infantryCompanySidc = "130310001512110000000000000000";
+const armorPlatoonSidc = "130310001412050000000000000000";
+const artilleryPlatoonSidc = "130310001413030000000000000000";
+const reconnaissancePlatoonSidc = "130310001412130000000000000000";
 
 test("renderSymbol returns SVG for a known SIDC", () => {
   const result = renderSymbol(infantryPlatoonSidc, { size: 40 });
@@ -52,6 +56,46 @@ test("buildSidc creates the expected known SIDC from structured parts", () => {
   );
 });
 
+test("buildSidc uses the correct field positions for land-unit fixtures", () => {
+  assert.equal(
+    buildSidc({
+      affiliation: "friend",
+      domain: "land",
+      entity: "infantry",
+      echelon: "company"
+    }),
+    infantryCompanySidc
+  );
+  assert.equal(
+    buildSidc({
+      affiliation: "friend",
+      domain: "land",
+      entity: "armor",
+      entityType: "tank",
+      echelon: "platoon"
+    }),
+    armorPlatoonSidc
+  );
+  assert.equal(
+    buildSidc({
+      affiliation: "friend",
+      domain: "land",
+      entity: "artillery",
+      echelon: "platoon"
+    }),
+    artilleryPlatoonSidc
+  );
+  assert.equal(
+    buildSidc({
+      affiliation: "friend",
+      domain: "land",
+      entity: "reconnaissance",
+      echelon: "platoon"
+    }),
+    reconnaissancePlatoonSidc
+  );
+});
+
 test("invalid SIDCs produce a useful typed error", () => {
   assert.throws(
     () => explainSidc("not-a-sidc"),
@@ -82,6 +126,9 @@ test("ambiguous build combinations fail explicitly", () => {
         domain: "land",
         entity: "infantry"
       }),
-    (error) => error instanceof SidcKitError && error.code === "AMBIGUOUS_COMBINATION"
+    (error) =>
+      error instanceof SidcKitError &&
+      error.code === "AMBIGUOUS_COMBINATION" &&
+      error.message.includes("Add echelon.")
   );
 });

@@ -13,7 +13,7 @@ V0 intentionally supports only a tiny curated set of 30-digit SIDCs. It does not
 
 ## Install
 
-This package is private while the V0 API is being validated.
+This package is private while the V0 API is being validated. Clone the repository and install dependencies locally:
 
 ```sh
 npm install
@@ -58,7 +58,7 @@ Explains a curated 30-digit SIDC into a stable JSON-serializable object. Unknown
 ### `buildSidc(parts)`
 
 Maps known curated part combinations to a SIDC. Unsupported combinations fail with `UNSUPPORTED_COMBINATION` rather than guessing.
-Partial combinations that match more than one curated SIDC fail with `AMBIGUOUS_COMBINATION`; add more parts such as `echelon`.
+Partial combinations that match more than one curated SIDC fail with `AMBIGUOUS_COMBINATION`; add the distinguishing part named in the error, such as `echelon`.
 
 ### `renderSymbol(sidc, options?)`
 
