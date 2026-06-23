@@ -1,7 +1,6 @@
 {
   "name": "sidc-kit",
   "version": "0.0.0",
-  "private": true,
   "description": "A small TypeScript toolkit for searching, explaining, building, and rendering curated SIDCs.",
   "type": "module",
   "main": "./dist/index.js",
@@ -16,6 +15,14 @@
     "dist",
     "README.md"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/the-Drunken-coder/sidc-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/the-Drunken-coder/sidc-kit/issues"
+  },
+  "homepage": "https://github.com/the-Drunken-coder/sidc-kit#readme",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && node --test"
@@ -28,6 +35,9 @@
     "milsymbol"
   ],
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "milsymbol": "^3.0.4"
   },
