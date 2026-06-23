@@ -1,0 +1,9 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "sidc-kit",
+      "include-component-in-tag": false
+    }
+  }
+}
