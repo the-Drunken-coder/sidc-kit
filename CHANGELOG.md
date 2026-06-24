@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/the-Drunken-coder/sidc-kit/compare/v0.3.0...v0.3.1) (2026-06-24)
+
+
+### Bug Fixes
+
+* use OpenCode Go model provider ([b7671df](https://github.com/the-Drunken-coder/sidc-kit/commit/b7671dfa5c46f6b4a0b198b0eb5f02f16be1ff2b))
+
 ## [0.3.0](https://github.com/the-Drunken-coder/sidc-kit/compare/v0.2.0...v0.3.0) (2026-06-24)
 
 
