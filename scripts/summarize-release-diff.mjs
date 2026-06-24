@@ -3,7 +3,7 @@ import { writeFileSync } from "node:fs";
 
 const tagName = process.env.RELEASE_TAG_NAME;
 const openCodeApiKey = process.env.OPENCODE_API_KEY;
-const model = process.env.OPENCODE_MODEL || "opencode/kimi-k2.6";
+const model = process.env.OPENCODE_MODEL || "opencode-go/kimi-k2.6";
 const contextPath = ".release-diff-context.md";
 const outputPath = "opencode-release-summary.md";
 const maxPatchBytes = 120_000;
