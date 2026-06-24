@@ -76,6 +76,10 @@ Rendering coverage follows the installed `milsymbol` package. The curated semant
 
 Image-based reverse lookup is intentionally deferred.
 
+## Changelog
+
+Release history is maintained in [`CHANGELOG.md`](./CHANGELOG.md) and GitHub Releases. The npm package includes `CHANGELOG.md` so published artifacts carry the release history.
+
 ## Release Automation
 
 Releases are managed by Release Please. Commits merged to `main` should use Conventional Commit prefixes:
@@ -95,4 +99,4 @@ Npm publishing uses trusted publishing with GitHub Actions OIDC. Configure the p
 
 No long-lived `NPM_TOKEN` is required for the release workflow.
 
-If `OPENCODE_API_KEY` is configured as a GitHub Actions secret, the release workflow also asks OpenCode to summarize the diff between the new release tag and the previous release tag, then appends that summary to the GitHub release notes. Set the optional repository variable `OPENCODE_MODEL` to override the default `opencode/kimi-k2` model.
+The release workflow requires `OPENCODE_API_KEY` as a GitHub Actions secret so OpenCode can summarize the diff between the new release tag and the previous release tag, then append that summary to the GitHub release notes. If summary generation or release-note appending fails, publishing fails. Set the optional repository variable `OPENCODE_MODEL` to override the default `opencode/kimi-k2` model.
