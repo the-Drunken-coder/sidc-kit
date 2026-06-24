@@ -54,7 +54,6 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
-          package-manager-cache: false
           registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
@@ -93,6 +92,18 @@ jobs:
             cat opencode-release-summary.md
           } > release-notes-with-opencode.md
           gh release edit "$RELEASE_TAG_NAME" --notes-file release-notes-with-opencode.md
+
+      - name: Verify manual release notes include a summary
+        if: ${{ steps.release_metadata.outputs.should_publish == 'true' && github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG_NAME: ${{ steps.release_metadata.outputs.tag_name }}
+        run: |
+          gh release view "$RELEASE_TAG_NAME" --json body --jq '.body // ""' > release-notes.md
+          if ! grep -Eq '^## (Manual Release Summary|Release Diff Summary|OpenCode Diff Summary)$' release-notes.md; then
+            echo "Manual release recovery requires repaired release notes with a summary heading before publishing."
+            exit 1
+          fi
 
       - name: Publish to npm
         if: ${{ steps.release_metadata.outputs.should_publish == 'true' }}
