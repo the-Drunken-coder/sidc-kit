@@ -56,6 +56,11 @@ export function renderSymbol(sidc: string, options: RenderSymbolOptions = {}): R
 
   try {
     const symbol = new ms.Symbol(normalizedSidc, options);
+    const metadata = symbol.getMetadata();
+    if (symbol.isValid() !== true || metadata.dimensionUnknown) {
+      throw new SidcKitError("RENDER_FAILED", `milsymbol does not support SIDC ${normalizedSidc}.`);
+    }
+
     const svg = symbol.asSVG();
     const anchor = toPoint(symbol.getAnchor?.());
     const size = toSize(symbol.getSize?.());
@@ -67,6 +72,10 @@ export function renderSymbol(sidc: string, options: RenderSymbolOptions = {}): R
       ...(size ? { size } : {})
     };
   } catch (error) {
+    if (error instanceof SidcKitError) {
+      throw error;
+    }
+
     throw new SidcKitError(
       "RENDER_FAILED",
       `Failed to render SIDC ${normalizedSidc}: ${error instanceof Error ? error.message : String(error)}`

@@ -68,7 +68,7 @@ Partial combinations that match more than one curated SIDC fail with `AMBIGUOUS_
 
 ### `renderSymbol(sidc, options?)`
 
-Renders a syntactically valid 30-digit SIDC with `milsymbol` and returns SVG plus anchor and size metadata when available. Rendering failures from `milsymbol` are reported as `RENDER_FAILED`.
+Renders a syntactically valid 30-digit SIDC with `milsymbol` and returns SVG plus anchor and size metadata when available. SIDCs that `milsymbol` cannot validate or render are reported as `RENDER_FAILED`.
 
 ## Coverage
 

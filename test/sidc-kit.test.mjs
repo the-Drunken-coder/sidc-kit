@@ -15,6 +15,8 @@ const armorPlatoonSidc = "130310001412050000000000000000";
 const artilleryPlatoonSidc = "130310001413030000000000000000";
 const reconnaissancePlatoonSidc = "130310001412130000000000000000";
 const nonCuratedRenderableSidc = "130410001412110000000000000000";
+const unknownDimensionFallbackSidc = "000000000000000000000000000000";
+const invalidIconFallbackSidc = "999999999999999999999999999999";
 
 test("renderSymbol returns SVG for a known SIDC", () => {
   const result = renderSymbol(infantryPlatoonSidc, { size: 40 });
@@ -32,6 +34,18 @@ test("renderSymbol returns SVG for a non-curated SIDC supported by milsymbol", (
   assert.equal(result.sidc, nonCuratedRenderableSidc);
   assert.match(result.svg, /^<svg/);
   assert.match(result.svg, /<\/svg>$/);
+});
+
+test("renderSymbol rejects unsupported 30-digit SIDCs instead of returning fallback SVG", () => {
+  for (const sidc of [unknownDimensionFallbackSidc, invalidIconFallbackSidc]) {
+    assert.throws(
+      () => renderSymbol(sidc, { size: 40 }),
+      (error) =>
+        error instanceof SidcKitError &&
+        error.code === "RENDER_FAILED" &&
+        error.message.includes(sidc)
+    );
+  }
 });
 
 test("explainSidc returns expected curated parts", () => {
