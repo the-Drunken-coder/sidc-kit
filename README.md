@@ -76,6 +76,10 @@ Rendering coverage follows the installed `milsymbol` package. The curated semant
 
 Image-based reverse lookup is intentionally deferred.
 
+## Changelog
+
+Release history is maintained in [`CHANGELOG.md`](./CHANGELOG.md) and GitHub Releases. The npm package includes `CHANGELOG.md` so published artifacts carry the release history.
+
 ## Release Automation
 
 Releases are managed by Release Please. Commits merged to `main` should use Conventional Commit prefixes:
