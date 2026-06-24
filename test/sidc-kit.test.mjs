@@ -14,6 +14,7 @@ const infantryCompanySidc = "130310001512110000000000000000";
 const armorPlatoonSidc = "130310001412050000000000000000";
 const artilleryPlatoonSidc = "130310001413030000000000000000";
 const reconnaissancePlatoonSidc = "130310001412130000000000000000";
+const nonCuratedRenderableSidc = "130410001412110000000000000000";
 
 test("renderSymbol returns SVG for a known SIDC", () => {
   const result = renderSymbol(infantryPlatoonSidc, { size: 40 });
@@ -25,6 +26,14 @@ test("renderSymbol returns SVG for a known SIDC", () => {
   assert.equal(typeof result.anchor?.y, "number");
 });
 
+test("renderSymbol returns SVG for a non-curated SIDC supported by milsymbol", () => {
+  const result = renderSymbol(nonCuratedRenderableSidc, { size: 40 });
+
+  assert.equal(result.sidc, nonCuratedRenderableSidc);
+  assert.match(result.svg, /^<svg/);
+  assert.match(result.svg, /<\/svg>$/);
+});
+
 test("explainSidc returns expected curated parts", () => {
   const result = explainSidc(infantryPlatoonSidc);
 
@@ -34,6 +43,13 @@ test("explainSidc returns expected curated parts", () => {
   assert.equal(result.parts.domain, "land");
   assert.equal(result.parts.entity, "infantry");
   assert.equal(result.parts.echelon, "platoon");
+});
+
+test("explainSidc remains limited to curated SIDCs", () => {
+  assert.throws(
+    () => explainSidc(nonCuratedRenderableSidc),
+    (error) => error instanceof SidcKitError && error.code === "UNSUPPORTED_SIDC"
+  );
 });
 
 test("searchSymbols finds symbols by natural-language alias", () => {

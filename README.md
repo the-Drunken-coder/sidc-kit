@@ -7,9 +7,9 @@ It wraps the MIT-licensed [`milsymbol`](https://www.npmjs.com/package/milsymbol)
 - search for symbols by plain-language terms
 - explain known SIDCs into structured parts
 - build known SIDCs from structured parts
-- render known SIDCs to SVG
+- render SIDCs to SVG with `milsymbol`
 
-V0 intentionally supports only a tiny curated set of 30-digit SIDCs. It does not claim exhaustive MIL-STD-2525 or STANAG APP-6 coverage.
+V0 can render syntactically valid 30-digit SIDCs that `milsymbol` supports. Search, explain, and build intentionally support only a tiny curated set and do not claim exhaustive MIL-STD-2525 or STANAG APP-6 semantic coverage.
 
 ## Install
 
@@ -68,11 +68,11 @@ Partial combinations that match more than one curated SIDC fail with `AMBIGUOUS_
 
 ### `renderSymbol(sidc, options?)`
 
-Renders a curated SIDC with `milsymbol` and returns SVG plus anchor and size metadata when available.
+Renders a syntactically valid 30-digit SIDC with `milsymbol` and returns SVG plus anchor and size metadata when available. Rendering failures from `milsymbol` are reported as `RENDER_FAILED`.
 
 ## Coverage
 
-The current curated set includes a few common land-unit examples such as friendly infantry platoon, hostile infantry platoon, armor platoon, artillery platoon, reconnaissance platoon, and infantry company.
+Rendering coverage follows the installed `milsymbol` package. The curated semantic set includes a few common land-unit examples such as friendly infantry platoon, hostile infantry platoon, armor platoon, artillery platoon, reconnaissance platoon, and infantry company.
 
 Image-based reverse lookup is intentionally deferred.
 

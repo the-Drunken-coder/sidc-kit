@@ -53,7 +53,6 @@ type DisambiguatingPartKey = (typeof disambiguatingPartKeys)[number];
 
 export function renderSymbol(sidc: string, options: RenderSymbolOptions = {}): RenderSymbolResult {
   const normalizedSidc = normalizeSidc(sidc);
-  requireCuratedSidc(normalizedSidc);
 
   try {
     const symbol = new ms.Symbol(normalizedSidc, options);
