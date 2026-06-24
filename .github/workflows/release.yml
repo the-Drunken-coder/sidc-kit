@@ -36,7 +36,6 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-          package-manager-cache: false
 
       - name: Install dependencies
         if: ${{ steps.release.outputs.release_created == 'true' }}
@@ -77,6 +76,4 @@ jobs:
 
       - name: Publish to npm
         if: ${{ steps.release.outputs.release_created == 'true' }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public
