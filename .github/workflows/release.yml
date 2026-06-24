@@ -30,19 +30,19 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      - name: Resolve release metadata
+      - name: Resolve publish metadata
         id: release_metadata
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "release_created=true" >> "$GITHUB_OUTPUT"
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
             echo "tag_name=${{ inputs.tag_name }}" >> "$GITHUB_OUTPUT"
           else
-            echo "release_created=${{ steps.release.outputs.release_created }}" >> "$GITHUB_OUTPUT"
+            echo "should_publish=${{ steps.release.outputs.release_created }}" >> "$GITHUB_OUTPUT"
             echo "tag_name=${{ steps.release.outputs.tag_name }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Check out repository
-        if: ${{ steps.release_metadata.outputs.release_created == 'true' }}
+        if: ${{ steps.release_metadata.outputs.should_publish == 'true' }}
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
@@ -50,22 +50,24 @@ jobs:
           ref: ${{ steps.release_metadata.outputs.tag_name }}
 
       - name: Set up Node.js
-        if: ${{ steps.release_metadata.outputs.release_created == 'true' }}
+        if: ${{ steps.release_metadata.outputs.should_publish == 'true' }}
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
+          package-manager-cache: false
           registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
-        if: ${{ steps.release_metadata.outputs.release_created == 'true' }}
+        if: ${{ steps.release_metadata.outputs.should_publish == 'true' }}
         run: npm ci
 
       - name: Test package
-        if: ${{ steps.release_metadata.outputs.release_created == 'true' }}
+        if: ${{ steps.release_metadata.outputs.should_publish == 'true' }}
         run: npm test
 
       - name: Generate OpenCode release diff summary
-        if: ${{ steps.release_metadata.outputs.release_created == 'true' && github.event_name == 'push' }}
+        if: ${{ steps.release_metadata.outputs.should_publish == 'true' && github.event_name == 'push' }}
+        continue-on-error: true
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_MODEL: ${{ vars.OPENCODE_MODEL }}
@@ -73,14 +75,15 @@ jobs:
         run: node scripts/summarize-release-diff.mjs
 
       - name: Append OpenCode summary to GitHub release
-        if: ${{ steps.release_metadata.outputs.release_created == 'true' && github.event_name == 'push' }}
+        if: ${{ steps.release_metadata.outputs.should_publish == 'true' && github.event_name == 'push' }}
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG_NAME: ${{ steps.release_metadata.outputs.tag_name }}
         run: |
           if [ ! -s opencode-release-summary.md ]; then
-            echo "No OpenCode release summary was generated."
-            exit 1
+            echo "No OpenCode release summary was generated; skipping release-note enrichment."
+            exit 0
           fi
 
           gh release view "$RELEASE_TAG_NAME" --json body --jq '.body // ""' > release-notes.md
@@ -91,18 +94,6 @@ jobs:
           } > release-notes-with-opencode.md
           gh release edit "$RELEASE_TAG_NAME" --notes-file release-notes-with-opencode.md
 
-      - name: Verify release notes include a summary
-        if: ${{ steps.release_metadata.outputs.release_created == 'true' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG_NAME: ${{ steps.release_metadata.outputs.tag_name }}
-        run: |
-          gh release view "$RELEASE_TAG_NAME" --json body --jq '.body // ""' > release-notes.md
-          if ! grep -Eq '^## (OpenCode Diff Summary|Manual Release Summary|Release Diff Summary)$' release-notes.md; then
-            echo "Release notes must include an OpenCode or manual release summary before publishing."
-            exit 1
-          fi
-
       - name: Publish to npm
-        if: ${{ steps.release_metadata.outputs.release_created == 'true' }}
+        if: ${{ steps.release_metadata.outputs.should_publish == 'true' }}
         run: npm publish --access public

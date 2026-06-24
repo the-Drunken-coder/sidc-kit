@@ -99,4 +99,4 @@ Npm publishing uses trusted publishing with GitHub Actions OIDC. Configure the p
 
 No long-lived `NPM_TOKEN` is required for the release workflow.
 
-The release workflow requires `OPENCODE_API_KEY` as a GitHub Actions secret so OpenCode can summarize the diff between the new release tag and the previous release tag, then append that summary to the GitHub release notes. If summary generation or release-note appending fails, publishing fails. Set the optional repository variable `OPENCODE_MODEL` to override the default `opencode-go/kimi-k2.6` model.
+If `OPENCODE_API_KEY` is configured as a GitHub Actions secret, the release workflow asks OpenCode to summarize the diff between the new release tag and the previous release tag, then appends that summary to the GitHub release notes. Summary generation is best-effort and does not block npm publishing. Set the optional repository variable `OPENCODE_MODEL` to override the default `opencode-go/kimi-k2.6` model.
