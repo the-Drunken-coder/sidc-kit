@@ -1,6 +1,6 @@
 {
   "name": "sidc-kit",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "A small TypeScript toolkit for searching, explaining, building, and rendering curated SIDCs.",
   "type": "module",
   "main": "./dist/index.js",
