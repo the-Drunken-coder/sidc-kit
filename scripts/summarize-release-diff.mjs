@@ -9,13 +9,13 @@ const outputPath = "opencode-release-summary.md";
 const maxPatchBytes = 120_000;
 
 if (!tagName) {
-  console.log("No release tag was provided; skipping OpenCode release summary.");
-  process.exit(0);
+  console.error("No release tag was provided; cannot generate OpenCode release summary.");
+  process.exit(1);
 }
 
 if (!openCodeApiKey) {
-  console.log("OPENCODE_API_KEY is not configured; skipping OpenCode release summary.");
-  process.exit(0);
+  console.error("OPENCODE_API_KEY is not configured; cannot generate OpenCode release summary.");
+  process.exit(1);
 }
 
 /**
@@ -85,7 +85,7 @@ const prompt = [
 
 const result = spawnSync(
   "npx",
-  ["-y", "opencode-ai@1.17.9", "run", "--pure", "--model", model, "--file", contextPath, prompt],
+  ["-y", "opencode-ai@1.17.9", "run", prompt, "--pure", "--model", model, "--file", contextPath],
   {
     encoding: "utf8",
     env: process.env,
@@ -106,8 +106,8 @@ if (result.status !== 0) {
 
 const summary = result.stdout.trim();
 if (!summary) {
-  console.log("OpenCode returned an empty summary.");
-  process.exit(0);
+  console.error("OpenCode returned an empty summary.");
+  process.exit(1);
 }
 
 writeFileSync(outputPath, `${summary}\n`);
