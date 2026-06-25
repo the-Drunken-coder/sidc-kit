@@ -5,6 +5,7 @@ import {
   SidcKitError,
   buildSidc,
   explainSidc,
+  identifySymbol,
   renderSymbol,
   searchSymbols
 } from "../dist/index.js";
@@ -72,6 +73,49 @@ test("searchSymbols finds symbols by natural-language alias", () => {
   assert.ok(results.length > 0);
   assert.equal(results[0].sidc, infantryPlatoonSidc);
   assert.ok(results[0].score > 0);
+});
+
+test("identifySymbol matches a clean curated SVG rendering", () => {
+  const svg = renderSymbol(infantryPlatoonSidc, { size: 40 }).svg;
+  const results = identifySymbol(svg, { size: 40 });
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].sidc, infantryPlatoonSidc);
+  assert.equal(results[0].confidence, 1);
+  assert.equal(results[0].evidence.exact, true);
+  assert.equal(results[0].evidence.method, "normalized-svg");
+});
+
+test("identifySymbol normalizes near-exact SVG input", () => {
+  const svg = renderSymbol(armorPlatoonSidc, { size: 40 }).svg;
+  const nearExactSvg = `\n<!-- exported from a clean renderer -->\n${svg.replaceAll("><", ">\n  <")}\n`;
+  const dataUrlSvg = `data:image/svg+xml,${encodeURIComponent(nearExactSvg)}`;
+  const results = identifySymbol(dataUrlSvg, { size: 40 });
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].sidc, armorPlatoonSidc);
+  assert.equal(results[0].confidence, 1);
+  assert.equal(results[0].evidence.exact, true);
+});
+
+test("identifySymbol returns stable ranked candidates when a broad threshold is requested", () => {
+  const svg = renderSymbol(infantryPlatoonSidc, { size: 40 }).svg;
+  const results = identifySymbol(svg, { size: 40, minConfidence: 0.93, limit: 4 });
+
+  assert.deepEqual(
+    results.map((result) => result.sidc),
+    [infantryPlatoonSidc, reconnaissancePlatoonSidc, artilleryPlatoonSidc, armorPlatoonSidc]
+  );
+  assert.equal(results[0].confidence, 1);
+  assert.equal(results[0].evidence.exact, true);
+  assert.ok(results[1].confidence < results[0].confidence);
+  assert.equal(results[1].evidence.exact, false);
+});
+
+test("identifySymbol returns no candidates for non-milsymbol SVG input", () => {
+  const results = identifySymbol('<svg xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8"/></svg>');
+
+  assert.deepEqual(results, []);
 });
 
 test("buildSidc creates the expected known SIDC from structured parts", () => {

@@ -8,8 +8,9 @@ It wraps the MIT-licensed [`milsymbol`](https://www.npmjs.com/package/milsymbol)
 - explain known SIDCs into structured parts
 - build known SIDCs from structured parts
 - render SIDCs to SVG with `milsymbol`
+- identify clean `milsymbol` SVG renderings against the curated set
 
-V0 can render syntactically valid 30-digit SIDCs that `milsymbol` supports. Search, explain, and build intentionally support only a tiny curated set and do not claim exhaustive MIL-STD-2525 or STANAG APP-6 semantic coverage.
+V0 can render syntactically valid 30-digit SIDCs that `milsymbol` supports. Search, explain, build, and reverse lookup intentionally support only a tiny curated set and do not claim exhaustive MIL-STD-2525 or STANAG APP-6 semantic coverage.
 
 ## Install
 
@@ -35,7 +36,7 @@ npm test
 ## Usage
 
 ```ts
-import { buildSidc, explainSidc, renderSymbol, searchSymbols } from "sidc-kit";
+import { buildSidc, explainSidc, identifySymbol, renderSymbol, searchSymbols } from "sidc-kit";
 
 const results = searchSymbols("friendly infantry platoon");
 
@@ -49,6 +50,8 @@ const sidc = buildSidc({
 });
 
 const rendered = renderSymbol(sidc, { size: 40 });
+
+const matches = identifySymbol(rendered.svg, { size: 40 });
 ```
 
 ## API
@@ -70,11 +73,18 @@ Partial combinations that match more than one curated SIDC fail with `AMBIGUOUS_
 
 Renders a syntactically valid 30-digit SIDC with `milsymbol` and returns SVG plus anchor and size metadata when available. SIDCs that `milsymbol` cannot validate or render are reported as `RENDER_FAILED`.
 
+### `identifySymbol(input, options?)`
+
+Compares a clean inline SVG string, or a percent-encoded `data:image/svg+xml` URL, against normalized `milsymbol` renderings for the curated fixture set. Returns ranked candidates with `confidence` and `evidence`; exact normalized SVG matches report `confidence: 1`.
+
+The default `minConfidence` is `0.99`, so unrelated or weakly similar SVGs return an empty list rather than a guessed SIDC. Pass a lower `minConfidence` when you want to inspect near matches or ambiguous alternatives.
+
+Reverse lookup v0 is deterministic clean-rendered-input comparison. It does not recognize screenshots, photos, scanned images, raster PNG/JPEG files, cropped symbols, hand-edited icons, map marker composites, or arbitrary MIL-STD-2525/APP-6 symbols outside the curated set.
+
 ## Coverage
 
 Rendering coverage follows the installed `milsymbol` package. The curated semantic set includes a few common land-unit examples such as friendly infantry platoon, hostile infantry platoon, armor platoon, artillery platoon, reconnaissance platoon, and infantry company.
-
-Image-based reverse lookup is intentionally deferred.
+Reverse lookup coverage is the same curated set and currently accepts clean SVG renderings only.
 
 ## Changelog
 

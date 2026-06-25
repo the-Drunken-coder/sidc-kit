@@ -41,6 +41,24 @@ export type SymbolSearchResult = ExplainSidcResult & {
   score: number;
 };
 
+export type IdentifySymbolOptions = RenderSymbolOptions & {
+  limit?: number;
+  minConfidence?: number;
+};
+
+export type IdentifySymbolEvidence = {
+  input: "svg";
+  method: "normalized-svg";
+  similarity: number;
+  exact: boolean;
+  notes: string[];
+};
+
+export type IdentifySymbolResult = ExplainSidcResult & {
+  confidence: number;
+  evidence: IdentifySymbolEvidence;
+};
+
 export type BuildSidcInput = Partial<Omit<SymbolParts, "standard" | "status" | "symbolSet">> & {
   affiliation: string;
   domain: string;
@@ -48,6 +66,7 @@ export type BuildSidcInput = Partial<Omit<SymbolParts, "standard" | "status" | "
 };
 
 const sidcPattern = /^\d{30}$/;
+const defaultIdentifyMinConfidence = 0.99;
 const disambiguatingPartKeys = ["entityType", "entitySubtype", "echelon"] as const;
 type DisambiguatingPartKey = (typeof disambiguatingPartKeys)[number];
 
@@ -110,6 +129,48 @@ export function searchSymbols(query: string, options: SymbolSearchOptions = {}):
     .slice(0, limit);
 }
 
+export function identifySymbol(input: string, options: IdentifySymbolOptions = {}): IdentifySymbolResult[] {
+  const normalizedInput = normalizeSvgInput(input);
+  if (!normalizedInput) {
+    return [];
+  }
+
+  const { limit = curatedSymbols.length, minConfidence = defaultIdentifyMinConfidence, ...renderOptions } = options;
+  const cappedLimit = Math.max(0, limit);
+  const threshold = clampConfidence(minConfidence);
+
+  return curatedSymbols
+    .map((symbol) => {
+      const normalizedCandidate = normalizeSvgInput(renderSymbol(symbol.sidc, renderOptions).svg);
+      if (!normalizedCandidate) {
+        return undefined;
+      }
+
+      const similarity = svgSimilarity(normalizedInput, normalizedCandidate);
+      const exact = normalizedInput === normalizedCandidate;
+      const confidence = roundConfidence(similarity);
+
+      return {
+        ...explainSymbol(symbol),
+        confidence,
+        evidence: {
+          input: "svg" as const,
+          method: "normalized-svg" as const,
+          similarity: confidence,
+          exact,
+          notes: [
+            exact
+              ? "Input SVG matches this curated milsymbol rendering after normalization."
+              : "Input SVG is only similar to this curated milsymbol rendering."
+          ]
+        }
+      };
+    })
+    .filter((result): result is IdentifySymbolResult => result !== undefined && result.confidence >= threshold)
+    .sort((left, right) => right.confidence - left.confidence || left.name.localeCompare(right.name))
+    .slice(0, cappedLimit);
+}
+
 export function buildSidc(parts: BuildSidcInput): string {
   const wanted = normalizeParts(parts);
   const matches = curatedSymbols.filter((candidate) => {
@@ -145,6 +206,40 @@ function normalizeSidc(sidc: string): string {
     throw new SidcKitError("INVALID_SIDC", "SIDC must be exactly 30 digits.");
   }
   return normalizedSidc;
+}
+
+function normalizeSvgInput(input: string): string | undefined {
+  const normalized = decodeInlineSvgDataUrl(input)
+    .replace(/^\uFEFF/, "")
+    .replace(/<\?xml[\s\S]*?\?>/gi, "")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .trim();
+
+  if (!/^<svg(?:\s|>)/i.test(normalized)) {
+    return undefined;
+  }
+
+  return normalized
+    .replace(/>\s+</g, "><")
+    .replace(/\s+\/>/g, "/>")
+    .replace(/\s+>/g, ">")
+    .replace(/\s*=\s*/g, "=")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function decodeInlineSvgDataUrl(input: string): string {
+  const trimmed = input.trim();
+  const dataUrl = /^data:image\/svg\+xml(?:;charset=[^;,]+)?,([\s\S]*)$/i.exec(trimmed);
+  if (!dataUrl) {
+    return trimmed;
+  }
+
+  try {
+    return decodeURIComponent(dataUrl[1]);
+  } catch {
+    return dataUrl[1];
+  }
 }
 
 function requireCuratedSidc(sidc: string): CuratedSymbol {
@@ -183,6 +278,55 @@ function scoreSymbol(symbol: CuratedSymbol, queryTerms: readonly string[]): numb
     }
     return score;
   }, 0);
+}
+
+function svgSimilarity(left: string, right: string): number {
+  if (left === right) {
+    return 1;
+  }
+
+  const maxLength = Math.max(left.length, right.length);
+  if (maxLength === 0) {
+    return 1;
+  }
+
+  return 1 - levenshteinDistance(left, right) / maxLength;
+}
+
+function levenshteinDistance(left: string, right: string): number {
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  const current = new Array<number>(right.length + 1);
+
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    current[0] = leftIndex;
+
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      const cost = left.charCodeAt(leftIndex - 1) === right.charCodeAt(rightIndex - 1) ? 0 : 1;
+      current[rightIndex] = Math.min(
+        previous[rightIndex] + 1,
+        current[rightIndex - 1] + 1,
+        previous[rightIndex - 1] + cost
+      );
+    }
+
+    for (let index = 0; index <= right.length; index += 1) {
+      previous[index] = current[index];
+    }
+  }
+
+  return previous[right.length];
+}
+
+function clampConfidence(value: number): number {
+  if (Number.isNaN(value)) {
+    return defaultIdentifyMinConfidence;
+  }
+
+  return Math.max(0, Math.min(1, value));
+}
+
+function roundConfidence(value: number): number {
+  return Number(clampConfidence(value).toFixed(4));
 }
 
 function tokenize(value: string): string[] {
