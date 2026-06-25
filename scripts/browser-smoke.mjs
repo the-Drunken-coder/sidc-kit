@@ -40,11 +40,9 @@ try {
   await esbuild.build({
     absWorkingDir: repoRoot,
     bundle: true,
-    conditions: ["browser", "import", "default"],
     entryPoints: [entryPath],
     format: "esm",
     logLevel: "silent",
-    mainFields: ["browser", "module", "main"],
     outfile: bundlePath,
     platform: "browser",
     target: "es2022"
@@ -57,7 +55,7 @@ try {
 
   const bundleStats = await stat(bundlePath);
   console.log(
-    `Browser bundle smoke passed: esbuild platform=browser bundled ${bundleStats.size} bytes and exercised renderSymbol/searchSymbols.`
+    `Browser bundle smoke passed: esbuild platform=browser defaults bundled ${bundleStats.size} bytes and exercised renderSymbol/searchSymbols.`
   );
 } finally {
   await rm(smokeDir, { recursive: true, force: true });

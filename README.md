@@ -62,7 +62,7 @@ const match = searchSymbols("friendly infantry platoon")[0];
 const marker = renderSymbol(match.sidc, { size: 32 });
 ```
 
-The package runtime does not import Node built-ins. The test suite verifies browser consumption by bundling the package root with esbuild using `platform: "browser"` and exercising `renderSymbol` and `searchSymbols` from the generated bundle. Since rendering delegates to `milsymbol`, browser bundles include the `milsymbol` renderer unless your app lazy-loads this package.
+The package runtime does not import Node built-ins. The test suite verifies browser consumption by bundling the package root with esbuild using `platform: "browser"` defaults and exercising `renderSymbol` and `searchSymbols` from the generated bundle. Since rendering delegates to `milsymbol`, browser bundles include the `milsymbol` renderer unless your app lazy-loads this package.
 
 ## API
 
