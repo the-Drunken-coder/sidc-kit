@@ -79,7 +79,7 @@ Compares a clean inline SVG string, or a percent-encoded `data:image/svg+xml` UR
 
 The default `minConfidence` is `0.99`, so unrelated or weakly similar SVGs return an empty list rather than a guessed SIDC. Pass a lower `minConfidence` when you want to inspect near matches or ambiguous alternatives.
 
-Reverse lookup v0 is deterministic clean-rendered-input comparison. It does not recognize screenshots, photos, scanned images, raster PNG/JPEG files, cropped symbols, hand-edited icons, map marker composites, or arbitrary MIL-STD-2525/APP-6 symbols outside the curated set.
+Reverse lookup v0 is deterministic clean-rendered-input comparison. Oversized SVG input is rejected before fuzzy scoring. It does not recognize screenshots, photos, scanned images, raster PNG/JPEG files, cropped symbols, hand-edited icons, map marker composites, or arbitrary MIL-STD-2525/APP-6 symbols outside the curated set.
 
 ## Coverage
 

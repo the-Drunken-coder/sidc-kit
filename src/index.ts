@@ -67,6 +67,7 @@ export type BuildSidcInput = Partial<Omit<SymbolParts, "standard" | "status" | "
 
 const sidcPattern = /^\d{30}$/;
 const defaultIdentifyMinConfidence = 0.99;
+const maxIdentifySvgInputLength = 10_000;
 const disambiguatingPartKeys = ["entityType", "entitySubtype", "echelon"] as const;
 type DisambiguatingPartKey = (typeof disambiguatingPartKeys)[number];
 
@@ -148,27 +149,35 @@ export function identifySymbol(input: string, options: IdentifySymbolOptions = {
 
       const similarity = svgSimilarity(normalizedInput, normalizedCandidate);
       const exact = normalizedInput === normalizedCandidate;
+      if (similarity < threshold) {
+        return undefined;
+      }
+
       const confidence = roundConfidence(similarity);
 
       return {
-        ...explainSymbol(symbol),
-        confidence,
-        evidence: {
-          input: "svg" as const,
-          method: "normalized-svg" as const,
-          similarity: confidence,
-          exact,
-          notes: [
-            exact
-              ? "Input SVG matches this curated milsymbol rendering after normalization."
-              : "Input SVG is only similar to this curated milsymbol rendering."
-          ]
+        similarity,
+        result: {
+          ...explainSymbol(symbol),
+          confidence,
+          evidence: {
+            input: "svg" as const,
+            method: "normalized-svg" as const,
+            similarity: confidence,
+            exact,
+            notes: [
+              exact
+                ? "Input SVG matches this curated milsymbol rendering after normalization."
+                : "Input SVG is only similar to this curated milsymbol rendering."
+            ]
+          }
         }
       };
     })
-    .filter((result): result is IdentifySymbolResult => result !== undefined && result.confidence >= threshold)
-    .sort((left, right) => right.confidence - left.confidence || left.name.localeCompare(right.name))
-    .slice(0, cappedLimit);
+    .filter((candidate): candidate is { similarity: number; result: IdentifySymbolResult } => candidate !== undefined)
+    .sort((left, right) => right.similarity - left.similarity || left.result.name.localeCompare(right.result.name))
+    .slice(0, cappedLimit)
+    .map((candidate) => candidate.result);
 }
 
 export function buildSidc(parts: BuildSidcInput): string {
@@ -215,6 +224,10 @@ function normalizeSvgInput(input: string): string | undefined {
     .replace(/<!--[\s\S]*?-->/g, "")
     .trim();
 
+  if (normalized.length > maxIdentifySvgInputLength) {
+    return undefined;
+  }
+
   if (!/^<svg(?:\s|>)/i.test(normalized)) {
     return undefined;
   }
@@ -230,7 +243,7 @@ function normalizeSvgInput(input: string): string | undefined {
 
 function decodeInlineSvgDataUrl(input: string): string {
   const trimmed = input.trim();
-  const dataUrl = /^data:image\/svg\+xml(?:;charset=[^;,]+)?,([\s\S]*)$/i.exec(trimmed);
+  const dataUrl = /^data:image\/svg\+xml(?:;[^,]+)*,([\s\S]*)$/i.exec(trimmed);
   if (!dataUrl) {
     return trimmed;
   }
@@ -326,7 +339,7 @@ function clampConfidence(value: number): number {
 }
 
 function roundConfidence(value: number): number {
-  return Number(clampConfidence(value).toFixed(4));
+  return Number(clampConfidence(value).toFixed(6));
 }
 
 function tokenize(value: string): string[] {
