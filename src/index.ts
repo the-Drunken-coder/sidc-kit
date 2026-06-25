@@ -147,7 +147,7 @@ export function identifySymbol(input: string, options: IdentifySymbolOptions = {
         return undefined;
       }
 
-      const similarity = svgSimilarity(normalizedInput, normalizedCandidate);
+      const similarity = svgSimilarity(normalizedInput, normalizedCandidate, threshold);
       const exact = normalizedInput === normalizedCandidate;
       if (similarity < threshold) {
         return undefined;
@@ -293,7 +293,7 @@ function scoreSymbol(symbol: CuratedSymbol, queryTerms: readonly string[]): numb
   }, 0);
 }
 
-function svgSimilarity(left: string, right: string): number {
+function svgSimilarity(left: string, right: string, minSimilarity: number): number {
   if (left === right) {
     return 1;
   }
@@ -301,6 +301,11 @@ function svgSimilarity(left: string, right: string): number {
   const maxLength = Math.max(left.length, right.length);
   if (maxLength === 0) {
     return 1;
+  }
+
+  const lengthSimilarity = 1 - Math.abs(left.length - right.length) / maxLength;
+  if (lengthSimilarity < minSimilarity) {
+    return lengthSimilarity;
   }
 
   return 1 - levenshteinDistance(left, right) / maxLength;
