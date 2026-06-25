@@ -1,6 +1,6 @@
 # SIDC Kit
 
-SIDC Kit is a small Node-focused TypeScript toolkit for working with military Symbol Identification Codes.
+SIDC Kit is a small TypeScript toolkit for working with military Symbol Identification Codes in Node and browser-bundled apps.
 
 It wraps the MIT-licensed [`milsymbol`](https://www.npmjs.com/package/milsymbol) renderer and adds a curated semantic layer for common workflows:
 
@@ -50,6 +50,19 @@ const sidc = buildSidc({
 
 const rendered = renderSymbol(sidc, { size: 40 });
 ```
+
+## Browser Bundles
+
+SIDC Kit publishes browser-safe ESM at the package root. Browser and map UI builds should import from `sidc-kit` through a modern bundler:
+
+```ts
+import { renderSymbol, searchSymbols } from "sidc-kit";
+
+const match = searchSymbols("friendly infantry platoon")[0];
+const marker = renderSymbol(match.sidc, { size: 32 });
+```
+
+The package runtime does not import Node built-ins. The test suite verifies browser consumption by bundling the package root with esbuild using `platform: "browser"` and exercising `renderSymbol` and `searchSymbols` from the generated bundle. Since rendering delegates to `milsymbol`, browser bundles include the `milsymbol` renderer unless your app lazy-loads this package.
 
 ## API
 
