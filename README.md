@@ -32,6 +32,17 @@ npm run build
 npm test
 ```
 
+## Fixture Generation
+
+For repository development, curated fixture output is generated from `fixtures/curated-land-units.json`.
+
+```sh
+npm run generate:fixtures
+npm run check:fixtures
+```
+
+The generator derives number-based MIL-STD-2525D/APP-6D SIDCs from structured land-unit parts, keeps echelon/mobility in digits 9-10 and function ID in digits 11-20, and verifies each generated SIDC renders with the installed `milsymbol` package.
+
 ## Usage
 
 ```ts
