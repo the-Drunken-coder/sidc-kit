@@ -54,7 +54,7 @@ const generatedFile = renderSymbolsFile(generatedSymbols);
 
 if (mode === "check") {
   const currentFile = await fs.readFile(targetPath, "utf8");
-  if (currentFile !== generatedFile) {
+  if (normalizeLineEndings(currentFile) !== generatedFile) {
     throw new Error(`${path.relative(repoRoot, targetPath)} is out of date. Run npm run generate:fixtures.`);
   }
 } else {
@@ -231,6 +231,7 @@ function validateRenderedSymbol(symbol, expected) {
 function validateGeneratedSymbols(symbols) {
   const sidcs = new Set();
   const names = new Set();
+  const aliases = new Set();
   for (const symbol of symbols) {
     if (sidcs.has(symbol.sidc)) {
       throw new Error(`Duplicate generated SIDC ${symbol.sidc}.`);
@@ -241,7 +242,19 @@ function validateGeneratedSymbols(symbols) {
       throw new Error(`Duplicate fixture name ${symbol.name}.`);
     }
     names.add(symbol.name);
+
+    for (const alias of symbol.aliases) {
+      const normalizedAlias = alias.toLowerCase();
+      if (aliases.has(normalizedAlias)) {
+        throw new Error(`Duplicate fixture alias ${alias}.`);
+      }
+      aliases.add(normalizedAlias);
+    }
   }
+}
+
+function normalizeLineEndings(value) {
+  return value.replace(/\r\n/g, "\n");
 }
 
 function renderSymbolsFile(symbols) {
