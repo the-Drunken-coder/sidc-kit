@@ -34,6 +34,20 @@ npm test
 
 ## Usage
 
+### CLI
+
+```sh
+sidc-kit search "friendly infantry" --limit 3
+sidc-kit search "friendly infantry" --json
+sidc-kit explain 130310001412110000000000000000 --json
+sidc-kit build --affiliation friend --domain land --entity infantry --echelon platoon
+sidc-kit render 130310001412110000000000000000 --size 40 > symbol.svg
+```
+
+The CLI wraps the public API without a separate data model. Human defaults use plain text, while `--json` returns JSON for commands and typed JSON errors on stderr.
+
+### TypeScript
+
 ```ts
 import { buildSidc, explainSidc, renderSymbol, searchSymbols } from "sidc-kit";
 
