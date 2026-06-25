@@ -44,7 +44,7 @@ sidc-kit build --affiliation friend --domain land --entity infantry --echelon pl
 sidc-kit render 130310001412110000000000000000 --size 40 > symbol.svg
 ```
 
-The CLI wraps the public API without a separate data model. Human defaults use plain text, while `--json` returns JSON for commands and typed JSON errors on stderr.
+The CLI wraps the public API without a separate data model. Human defaults use plain text, while `--json` returns JSON for commands and typed JSON errors on stderr. Render size must be between 1 and 4096 pixels.
 
 ### TypeScript
 

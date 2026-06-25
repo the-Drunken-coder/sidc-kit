@@ -15,6 +15,35 @@ function runCli(args) {
   });
 }
 
+test("CLI module import does not execute the command runner", async () => {
+  const originalArgv = process.argv;
+  const originalExitCode = process.exitCode;
+  const originalStderrWrite = process.stderr.write;
+  let stderr = "";
+
+  try {
+    process.argv = [process.execPath, "--test"];
+    process.exitCode = undefined;
+    process.stderr.write = (chunk, ...args) => {
+      stderr += String(chunk);
+      const callback = args.find((arg) => typeof arg === "function");
+      if (callback) {
+        callback();
+      }
+      return true;
+    };
+
+    await import(`${new URL("../dist/cli.js", import.meta.url).href}?import-side-effect=${Date.now()}`);
+
+    assert.equal(process.exitCode, undefined);
+    assert.equal(stderr, "");
+  } finally {
+    process.argv = originalArgv;
+    process.exitCode = originalExitCode;
+    process.stderr.write = originalStderrWrite;
+  }
+});
+
 test("CLI searches curated symbols with plain text output", () => {
   const result = runCli(["search", "friendly", "infantry", "platoon", "--limit", "1"]);
 
@@ -78,4 +107,38 @@ test("CLI returns typed API failures as JSON when requested", () => {
   const parsed = JSON.parse(result.stderr);
   assert.equal(parsed.error.code, "INVALID_SIDC");
   assert.match(parsed.error.message, /30 digits/);
+});
+
+test("CLI ignores --json after the positional terminator", () => {
+  const result = runCli(["explain", "--", "--json"]);
+
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /^INVALID_SIDC: SIDC must be exactly 30 digits\.\n$/);
+  assert.throws(() => JSON.parse(result.stderr), SyntaxError);
+});
+
+test("CLI gives consistent diagnostics for separated negative numeric values", () => {
+  const separated = runCli(["search", "infantry", "--limit", "-1"]);
+  const inline = runCli(["search", "infantry", "--limit=-1"]);
+
+  assert.equal(separated.status, 2);
+  assert.equal(inline.status, 2);
+  assert.equal(separated.stdout, "");
+  assert.equal(inline.stdout, "");
+  assert.equal(separated.stderr, inline.stderr);
+  assert.match(separated.stderr, /^USAGE_ERROR: --limit must be a non-negative integer\.\n$/);
+});
+
+test("CLI rejects unsafe and oversized integer values", () => {
+  const unsafe = runCli(["render", infantryPlatoonSidc, "--size", "999999999999999999999999999999"]);
+  const oversized = runCli(["render", infantryPlatoonSidc, "--size", "4097"]);
+
+  assert.equal(unsafe.status, 2);
+  assert.equal(unsafe.stdout, "");
+  assert.match(unsafe.stderr, /^USAGE_ERROR: --size must be a safe integer\.\n$/);
+
+  assert.equal(oversized.status, 2);
+  assert.equal(oversized.stdout, "");
+  assert.match(oversized.stderr, /^USAGE_ERROR: --size must be no greater than 4096\.\n$/);
 });

@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import {
   SidcKitError,
   buildSidc,
@@ -32,6 +36,8 @@ const commonOptions = {
   json: { kind: "flag" }
 } satisfies Record<string, OptionSpec>;
 
+const maxRenderSize = 4096;
+
 const helpText = `Usage:
   sidc-kit search <query...> [--limit <n>] [--json]
   sidc-kit explain <sidc> [--json]
@@ -46,7 +52,7 @@ Commands:
 `;
 
 export function run(argv: readonly string[]): number {
-  const wantsJson = argv.includes("--json");
+  const wantsJson = hasJsonFlagBeforeTerminator(argv);
 
   try {
     if (argv.length === 0) {
@@ -159,7 +165,7 @@ function runRender(args: readonly string[]): number {
   const options: RenderSymbolOptions = {};
   const size = getOptionalValue(parsed, "size");
   if (size !== undefined) {
-    options.size = parsePositiveInteger(size, "size");
+    options.size = parsePositiveInteger(size, "size", maxRenderSize);
   }
   if (hasFlag(parsed, "fill")) {
     options.fill = true;
@@ -276,7 +282,7 @@ function parseArgs(args: readonly string[], specs: Record<string, OptionSpec>): 
     }
 
     const next = args[index + 1];
-    if (next === undefined || next.startsWith("-")) {
+    if (next === undefined || next === "--" || next.startsWith("--")) {
       throw new UsageError(`--${name} requires a value.`);
     }
     setOption(options, name, next);
@@ -336,15 +342,35 @@ function parseNonNegativeInteger(value: string, name: string): number {
   if (!/^\d+$/.test(value)) {
     throw new UsageError(`--${name} must be a non-negative integer.`);
   }
-  return Number(value);
+
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed)) {
+    throw new UsageError(`--${name} must be a safe integer.`);
+  }
+  return parsed;
 }
 
-function parsePositiveInteger(value: string, name: string): number {
+function parsePositiveInteger(value: string, name: string, max?: number): number {
   const parsed = parseNonNegativeInteger(value, name);
   if (parsed === 0) {
     throw new UsageError(`--${name} must be greater than zero.`);
   }
+  if (max !== undefined && parsed > max) {
+    throw new UsageError(`--${name} must be no greater than ${max}.`);
+  }
   return parsed;
+}
+
+function hasJsonFlagBeforeTerminator(argv: readonly string[]): boolean {
+  for (const arg of argv) {
+    if (arg === "--") {
+      return false;
+    }
+    if (arg === "--json") {
+      return true;
+    }
+  }
+  return false;
 }
 
 function writeJson(value: unknown): void {
@@ -367,4 +393,19 @@ function reportError(error: unknown, wantsJson: boolean): void {
   process.stderr.write(`${code}: ${message}\n`);
 }
 
-process.exitCode = run(process.argv.slice(2));
+function isCliEntryPoint(): boolean {
+  const entryPoint = process.argv[1];
+  if (!entryPoint) {
+    return false;
+  }
+
+  try {
+    return realpathSync(resolve(entryPoint)) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (isCliEntryPoint()) {
+  process.exitCode = run(process.argv.slice(2));
+}
