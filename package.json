@@ -29,8 +29,10 @@
   "homepage": "https://github.com/the-Drunken-coder/sidc-kit#readme",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "prepack": "npm run build",
-    "test": "npm run build && node --test && node scripts/browser-smoke.mjs",
+    "check:fixtures": "node scripts/generate-curated-fixtures.mjs --check",
+    "generate:fixtures": "node scripts/generate-curated-fixtures.mjs",
+    "prepack": "npm run check:fixtures && npm run build",
+    "test": "npm run check:fixtures && npm run build && node --test && node scripts/browser-smoke.mjs",
     "test:browser": "npm run build && node scripts/browser-smoke.mjs"
   },
   "keywords": [

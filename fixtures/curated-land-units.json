@@ -1,0 +1,98 @@
+[
+  {
+    "name": "Friendly Land Unit Infantry Platoon",
+    "aliases": [
+      "friendly infantry platoon",
+      "friendly inf platoon",
+      "friend infantry platoon",
+      "friend inf platoon",
+      "blue infantry platoon",
+      "land infantry platoon"
+    ],
+    "parts": {
+      "affiliation": "friend",
+      "entity": "infantry",
+      "echelon": "platoon"
+    }
+  },
+  {
+    "name": "Friendly Land Unit Infantry Company",
+    "aliases": [
+      "friendly infantry company",
+      "friendly inf company",
+      "friend infantry company",
+      "friend inf company",
+      "blue infantry company",
+      "land infantry company"
+    ],
+    "parts": {
+      "affiliation": "friend",
+      "entity": "infantry",
+      "echelon": "company"
+    }
+  },
+  {
+    "name": "Hostile Land Unit Infantry Platoon",
+    "aliases": [
+      "hostile infantry platoon",
+      "hostile inf platoon",
+      "enemy infantry platoon",
+      "enemy inf platoon",
+      "red infantry platoon",
+      "land infantry platoon hostile"
+    ],
+    "parts": {
+      "affiliation": "hostile",
+      "entity": "infantry",
+      "echelon": "platoon"
+    }
+  },
+  {
+    "name": "Friendly Land Unit Armor Platoon",
+    "aliases": [
+      "friendly armor platoon",
+      "friendly armour platoon",
+      "friendly tank platoon",
+      "friendly armoured platoon",
+      "friend tank platoon",
+      "blue armor platoon",
+      "land armor platoon"
+    ],
+    "parts": {
+      "affiliation": "friend",
+      "entity": "armor",
+      "entityType": "tank",
+      "echelon": "platoon"
+    }
+  },
+  {
+    "name": "Friendly Land Unit Artillery Platoon",
+    "aliases": [
+      "friendly artillery platoon",
+      "friendly arty platoon",
+      "friend field artillery platoon",
+      "friend arty platoon",
+      "blue artillery platoon",
+      "land artillery platoon"
+    ],
+    "parts": {
+      "affiliation": "friend",
+      "entity": "artillery",
+      "echelon": "platoon"
+    }
+  },
+  {
+    "name": "Friendly Land Unit Reconnaissance Platoon",
+    "aliases": [
+      "friendly reconnaissance platoon",
+      "friend recon platoon",
+      "blue reconnaissance platoon",
+      "land recon platoon"
+    ],
+    "parts": {
+      "affiliation": "friend",
+      "entity": "reconnaissance",
+      "echelon": "platoon"
+    }
+  }
+]
