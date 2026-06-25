@@ -31,6 +31,8 @@ const friendlyAirportSidc = "130320000012080300000000000000";
 const friendlyCheckpointSidc = "130325000013030000000000000000";
 const friendlyWaypointSidc = "130325000013180000000000000000";
 const nonCuratedRenderableSidc = "130410001412110000000000000000";
+const nonCuratedUnlabeledStatusSidc = "130410101412110000000000000000";
+const unknownEntitySidc = "130310001400000000000000000000";
 const unknownDimensionFallbackSidc = "000000000000000000000000000000";
 const invalidIconFallbackSidc = "999999999999999999999999999999";
 
@@ -135,6 +137,9 @@ test("explainSidc returns expected curated parts", () => {
   assert.equal(result.parts.domain, "land");
   assert.equal(result.parts.entity, "infantry");
   assert.equal(result.parts.echelon, "platoon");
+  assert.equal(result.fields.entity.code, "1211000000");
+  assert.equal(result.fields.entity.coverage, "curated");
+  assert.deepEqual(result.unknownFields, []);
 });
 
 test("explainSidc returns expanded curated parts", () => {
@@ -155,11 +160,57 @@ test("explainSidc returns expanded curated parts", () => {
   assert.equal(checkpoint.parts.entityType, "checkpoint");
 });
 
-test("explainSidc remains limited to curated SIDCs", () => {
+test("explainSidc returns partial decomposition for non-curated renderable SIDCs", () => {
+  const result = explainSidc(nonCuratedRenderableSidc);
+
+  assert.equal(result.coverage, "partial");
+  assert.equal(result.name, undefined);
+  assert.deepEqual(result.aliases, []);
+  assert.equal(result.parts.affiliation, "neutral");
+  assert.equal(result.parts.symbolSet, "land unit");
+  assert.equal(result.parts.status, "present");
+  assert.equal(result.parts.domain, "land");
+  assert.equal(result.parts.entity, "infantry");
+  assert.equal(result.parts.echelon, "platoon/detachment");
+  assert.deepEqual(result.unknownFields, []);
+  assert.deepEqual(result.fields.affiliation, {
+    code: "04",
+    value: "neutral",
+    coverage: "known"
+  });
+});
+
+test("explainSidc marks unlabeled non-present status unknown", () => {
+  const result = explainSidc(nonCuratedUnlabeledStatusSidc);
+
+  assert.equal(result.coverage, "partial");
+  assert.equal(result.parts.status, undefined);
+  assert.deepEqual(result.fields.status, {
+    code: "1",
+    coverage: "unknown"
+  });
+  assert.deepEqual(result.unknownFields, ["status"]);
+});
+
+test("explainSidc rejects unsupported 30-digit SIDCs with a typed error", () => {
   assert.throws(
-    () => explainSidc(nonCuratedRenderableSidc),
+    () => explainSidc(unknownDimensionFallbackSidc),
     (error) => error instanceof SidcKitError && error.code === "UNSUPPORTED_SIDC"
   );
+});
+
+test("explainSidc marks unknown partial fields instead of guessing", () => {
+  const result = explainSidc(unknownEntitySidc);
+
+  assert.equal(result.coverage, "partial");
+  assert.equal(result.parts.affiliation, "friend");
+  assert.equal(result.parts.domain, "land");
+  assert.equal(result.parts.entity, undefined);
+  assert.deepEqual(result.unknownFields, ["entity"]);
+  assert.deepEqual(result.fields.entity, {
+    code: "0000000000",
+    coverage: "unknown"
+  });
 });
 
 test("searchSymbols finds symbols by natural-language alias", () => {
