@@ -8,6 +8,7 @@ import {
   renderSymbol,
   searchSymbols
 } from "../dist/index.js";
+import { curatedSymbols } from "../dist/data/catalog/index.js";
 
 const infantryPlatoonSidc = "130310001412110000000000000000";
 const infantryCompanySidc = "130310001512110000000000000000";
@@ -49,6 +50,22 @@ const expandedCatalogSidcs = [
   friendlyWaypointSidc
 ];
 
+function buildInputFor(parts) {
+  const input = {
+    affiliation: parts.affiliation,
+    domain: parts.domain,
+    entity: parts.entity
+  };
+
+  for (const key of ["entityType", "entitySubtype", "echelon"]) {
+    if (parts[key]) {
+      input[key] = parts[key];
+    }
+  }
+
+  return input;
+}
+
 test("renderSymbol returns SVG for a known SIDC", () => {
   const result = renderSymbol(infantryPlatoonSidc, { size: 40 });
 
@@ -74,6 +91,25 @@ test("renderSymbol returns SVG for expanded curated SIDCs", () => {
     assert.equal(result.sidc, sidc);
     assert.match(result.svg, /^<svg/);
     assert.match(result.svg, /<\/svg>$/);
+  }
+});
+
+test("all curated catalog entries round-trip through public APIs", () => {
+  for (const symbol of curatedSymbols) {
+    const rendered = renderSymbol(symbol.sidc, { size: 32 });
+    assert.match(rendered.svg, /^<svg/);
+    assert.match(rendered.svg, /<\/svg>$/);
+
+    const explanation = explainSidc(symbol.sidc);
+    assert.equal(explanation.name, symbol.name);
+    assert.deepEqual(explanation.parts, symbol.parts);
+
+    assert.ok(
+      searchSymbols(symbol.name, { limit: curatedSymbols.length }).some((result) => result.sidc === symbol.sidc),
+      `Expected searchSymbols to find ${symbol.name}`
+    );
+
+    assert.equal(buildSidc(buildInputFor(symbol.parts)), symbol.sidc);
   }
 });
 
