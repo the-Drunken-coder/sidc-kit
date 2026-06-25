@@ -72,7 +72,7 @@ Renders a syntactically valid 30-digit SIDC with `milsymbol` and returns SVG plu
 
 ## Coverage
 
-Rendering coverage follows the installed `milsymbol` package. The curated semantic set includes a few common land-unit examples such as friendly infantry platoon, hostile infantry platoon, armor platoon, artillery platoon, reconnaissance platoon, and infantry company.
+Rendering coverage follows the installed `milsymbol` package. The curated semantic set includes common, verified examples across land units, air, sea surface, sea subsurface, land equipment, land installations, and control measures. Examples include infantry platoons and companies, fighter and rotary-wing aircraft, UAVs, destroyers, frigates, merchant ships, submarines, unmanned underwater vehicles, tanks, armored personnel carriers, bases, airports, checkpoints, and waypoints.
 
 Image-based reverse lookup is intentionally deferred.
 
