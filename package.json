@@ -4,11 +4,14 @@
   "description": "A small TypeScript toolkit for rendering SIDCs and working with curated SIDC semantics.",
   "type": "module",
   "main": "./dist/index.js",
+  "browser": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "browser": "./dist/index.js",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -27,7 +30,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepack": "npm run build",
-    "test": "npm run build && node --test"
+    "test": "npm run build && node --test && node scripts/browser-smoke.mjs",
+    "test:browser": "npm run build && node scripts/browser-smoke.mjs"
   },
   "keywords": [
     "sidc",
@@ -44,6 +48,7 @@
     "milsymbol": "^3.0.4"
   },
   "devDependencies": {
+    "esbuild": "^0.28.1",
     "typescript": "^5.9.3"
   },
   "engines": {
