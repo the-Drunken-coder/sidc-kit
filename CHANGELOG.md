@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.2](https://github.com/the-Drunken-coder/sidc-kit/compare/v0.3.1...v0.3.2) (2026-06-25)
+
+
+### Bug Fixes
+
+* keep manual release note guard ([30bb3fb](https://github.com/the-Drunken-coder/sidc-kit/commit/30bb3fb3f2deec708568680bcfaea3dacf728312))
+* make release summaries best effort ([40434ff](https://github.com/the-Drunken-coder/sidc-kit/commit/40434ffe31123d75b4d299adecff78cd5f13292c))
+* make release summaries best effort ([4a75142](https://github.com/the-Drunken-coder/sidc-kit/commit/4a751424e529a6c9cf4683c42305ed679fc287a4))
+
 ## [0.3.1](https://github.com/the-Drunken-coder/sidc-kit/compare/v0.3.0...v0.3.1) (2026-06-24)
 
 
