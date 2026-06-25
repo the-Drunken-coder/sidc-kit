@@ -15,6 +15,7 @@ const armorPlatoonSidc = "130310001412050000000000000000";
 const artilleryPlatoonSidc = "130310001413030000000000000000";
 const reconnaissancePlatoonSidc = "130310001412130000000000000000";
 const nonCuratedRenderableSidc = "130410001412110000000000000000";
+const nonCuratedUnlabeledStatusSidc = "130410101412110000000000000000";
 const unknownEntitySidc = "130310001400000000000000000000";
 const unknownDimensionFallbackSidc = "000000000000000000000000000000";
 const invalidIconFallbackSidc = "999999999999999999999999999999";
@@ -81,6 +82,18 @@ test("explainSidc returns partial decomposition for non-curated renderable SIDCs
     value: "neutral",
     coverage: "known"
   });
+});
+
+test("explainSidc marks unlabeled non-present status unknown", () => {
+  const result = explainSidc(nonCuratedUnlabeledStatusSidc);
+
+  assert.equal(result.coverage, "partial");
+  assert.equal(result.parts.status, undefined);
+  assert.deepEqual(result.fields.status, {
+    code: "1",
+    coverage: "unknown"
+  });
+  assert.deepEqual(result.unknownFields, ["status"]);
 });
 
 test("explainSidc rejects unsupported 30-digit SIDCs with a typed error", () => {

@@ -208,7 +208,7 @@ function explainSymbol(symbol: CuratedSymbol): CuratedExplainSidcResult {
 }
 
 function explainPartialSidc(sidc: string, metadata: SymbolMetadata): PartialExplainSidcResult {
-  const parts = buildPartialParts(metadata);
+  const parts = buildPartialParts(sidc, metadata);
   const fields = buildFields(sidc, parts, "known");
 
   return {
@@ -293,7 +293,7 @@ function createSupportedSymbol(
   try {
     const symbol = new ms.Symbol(sidc, options);
     const metadata = symbol.getMetadata();
-    if (symbol.isValid() !== true || metadata.numberSIDC !== true || metadata.dimensionUnknown) {
+    if (symbol.isValid() !== true || metadata.dimensionUnknown) {
       throw new SidcKitError(failureCode, `milsymbol does not support SIDC ${sidc}.`);
     }
 
@@ -310,21 +310,23 @@ function createSupportedSymbol(
   }
 }
 
-function buildPartialParts(metadata: SymbolMetadata): PartialSymbolParts {
+function buildPartialParts(sidc: string, metadata: SymbolMetadata): PartialSymbolParts {
   const domain = normalizeDimension(metadata.dimension);
   const entityParts = functionEntityParts.get(metadata.functionid);
   const symbolSet = getSymbolSetLabel(domain, metadata);
   const affiliation = normalizeMetadataLabel(metadata.affiliation);
+  const status = getStatusLabel(sidc.slice(6, 7), metadata);
   const echelon = normalizeMetadataLabel(metadata.echelon);
-  const parts: PartialSymbolParts = {
-    status: getStatusLabel(metadata)
-  };
+  const parts: PartialSymbolParts = {};
 
   if (symbolSet) {
     parts.symbolSet = symbolSet;
   }
   if (affiliation) {
     parts.affiliation = affiliation;
+  }
+  if (status) {
+    parts.status = status;
   }
   if (domain) {
     parts.domain = domain;
@@ -403,12 +405,17 @@ function getSymbolSetLabel(domain: string | undefined, metadata: SymbolMetadata)
   return undefined;
 }
 
-function getStatusLabel(metadata: SymbolMetadata): string {
-  return (
-    normalizeMetadataLabel(metadata.notpresent) ??
-    normalizeMetadataLabel(metadata.condition) ??
-    "present"
-  );
+function getStatusLabel(statusCode: string, metadata: SymbolMetadata): string | undefined {
+  const condition = normalizeMetadataLabel(metadata.condition);
+  if (condition) {
+    return condition;
+  }
+
+  if (statusCode === "0") {
+    return "present";
+  }
+
+  return undefined;
 }
 
 function normalizeDimension(value: SymbolMetadata["dimension"]): string | undefined {

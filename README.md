@@ -82,7 +82,7 @@ Renders a syntactically valid 30-digit SIDC with `milsymbol` and returns SVG plu
 
 Rendering coverage follows the installed `milsymbol` package. The curated semantic set includes a few common land-unit examples such as friendly infantry platoon, hostile infantry platoon, armor platoon, artillery platoon, reconnaissance platoon, and infantry company.
 
-Partial decomposition is intentionally limited to affiliation, symbol set, status, domain, echelon, and entity. Entity labels come from function IDs already present in the curated table; unknown function IDs are reported through `unknownFields` instead of guessed.
+Partial decomposition is intentionally limited to affiliation, symbol set, status, domain, echelon, and entity. Entity labels come from function IDs already present in the curated table; unknown function IDs are reported through `unknownFields` instead of guessed. Status is labeled only when it is present or when `milsymbol` exposes a semantic condition label; otherwise status is reported through `unknownFields`.
 
 Image-based reverse lookup is intentionally deferred.
 
