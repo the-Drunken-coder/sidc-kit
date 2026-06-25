@@ -55,7 +55,9 @@ const rendered = renderSymbol(sidc, { size: 40 });
 
 ### `searchSymbols(query, options?)`
 
-Performs deterministic lexical matching over curated names, aliases, and part labels. Returns ranked results with `score`, `sidc`, `name`, `aliases`, `parts`, and `coverage`.
+Performs deterministic lexical matching over curated names, aliases, and part labels. Exact names, exact aliases, exact parts, and field-specific token matches are weighted predictably, with catalog order used as the tie-breaker. Returns ranked results with `score`, `sidc`, `name`, `aliases`, `parts`, and `coverage`.
+
+Curated search terms include practical abbreviations and regional spellings for supported records, such as `inf`/`infantry`, `arty`/`artillery`, `recon`/`reconnaissance`, and `tank`/`armor`/`armour`.
 
 ### `explainSidc(sidc)`
 

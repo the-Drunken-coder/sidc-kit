@@ -74,6 +74,50 @@ test("searchSymbols finds symbols by natural-language alias", () => {
   assert.ok(results[0].score > 0);
 });
 
+test("searchSymbols weights exact names, aliases, and parts predictably", () => {
+  assert.equal(searchSymbols("Friendly Land Unit Infantry Platoon")[0]?.sidc, infantryPlatoonSidc);
+  assert.equal(searchSymbols("friend infantry company")[0]?.sidc, infantryCompanySidc);
+  assert.equal(searchSymbols("tank")[0]?.sidc, armorPlatoonSidc);
+});
+
+test("searchSymbols supports curated synonyms and abbreviations", () => {
+  const cases = [
+    ["friendly inf company", infantryCompanySidc],
+    ["friendly arty platoon", artilleryPlatoonSidc],
+    ["friendly recon platoon", reconnaissancePlatoonSidc],
+    ["friendly armour platoon", armorPlatoonSidc],
+    ["tank platoon", armorPlatoonSidc]
+  ];
+
+  for (const [query, sidc] of cases) {
+    assert.equal(searchSymbols(query)[0]?.sidc, sidc, query);
+  }
+});
+
+test("searchSymbols returns no results for empty queries", () => {
+  assert.deepEqual(searchSymbols(""), []);
+  assert.deepEqual(searchSymbols("   \t\n"), []);
+});
+
+test("searchSymbols respects limits", () => {
+  assert.deepEqual(searchSymbols("infantry", { limit: 2 }).map((result) => result.sidc), [
+    infantryPlatoonSidc,
+    infantryCompanySidc
+  ]);
+  assert.deepEqual(searchSymbols("infantry", { limit: 0 }), []);
+  assert.deepEqual(searchSymbols("infantry", { limit: -1 }), []);
+});
+
+test("searchSymbols uses catalog order as a stable tie-breaker", () => {
+  assert.deepEqual(searchSymbols("friendly land", { limit: 5 }).map((result) => result.sidc), [
+    infantryPlatoonSidc,
+    infantryCompanySidc,
+    armorPlatoonSidc,
+    artilleryPlatoonSidc,
+    reconnaissancePlatoonSidc
+  ]);
+});
+
 test("buildSidc creates the expected known SIDC from structured parts", () => {
   assert.equal(
     buildSidc({

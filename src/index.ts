@@ -50,6 +50,44 @@ export type BuildSidcInput = Partial<Omit<SymbolParts, "standard" | "status" | "
 const sidcPattern = /^\d{30}$/;
 const disambiguatingPartKeys = ["entityType", "entitySubtype", "echelon"] as const;
 type DisambiguatingPartKey = (typeof disambiguatingPartKeys)[number];
+type SearchFieldGroup = "names" | "aliases" | "parts";
+type SearchField = {
+  text: string;
+  terms: Set<string>;
+};
+type SearchFields = Record<SearchFieldGroup, SearchField[]>;
+type FieldScoreWeights = Record<SearchFieldGroup, number>;
+
+const exactPhraseWeights = {
+  names: 100,
+  aliases: 90,
+  parts: 70
+} satisfies FieldScoreWeights;
+
+const exactTokenWeights = {
+  names: 12,
+  aliases: 10,
+  parts: 8
+} satisfies FieldScoreWeights;
+
+const relatedTokenWeights = {
+  names: 7,
+  aliases: 6,
+  parts: 5
+} satisfies FieldScoreWeights;
+
+const partialTokenWeights = {
+  names: 2,
+  aliases: 2,
+  parts: 1
+} satisfies FieldScoreWeights;
+
+const synonymGroups = [
+  ["armor", "armour", "armored", "armoured", "tank"],
+  ["recon", "reconnaissance"],
+  ["arty", "artillery"],
+  ["inf", "infantry"]
+] as const;
 
 export function renderSymbol(sidc: string, options: RenderSymbolOptions = {}): RenderSymbolResult {
   const normalizedSidc = normalizeSidc(sidc);
@@ -96,17 +134,25 @@ export function searchSymbols(query: string, options: SymbolSearchOptions = {}):
   }
 
   const limit = Math.max(0, options.limit ?? curatedSymbols.length);
+  if (limit === 0) {
+    return [];
+  }
+  const normalizedQuery = normalizeText(query);
 
   return curatedSymbols
-    .map((symbol) => {
-      const score = scoreSymbol(symbol, terms);
+    .map((symbol, index) => {
+      const score = scoreSymbol(symbol, terms, normalizedQuery);
       return {
-        ...explainSymbol(symbol),
-        score
+        index,
+        result: {
+          ...explainSymbol(symbol),
+          score
+        }
       };
     })
-    .filter((result) => result.score > 0)
-    .sort((left, right) => right.score - left.score || left.name.localeCompare(right.name))
+    .filter(({ result }) => result.score > 0)
+    .sort((left, right) => right.result.score - left.result.score || left.index - right.index)
+    .map(({ result }) => result)
     .slice(0, limit);
 }
 
@@ -165,33 +211,97 @@ function explainSymbol(symbol: CuratedSymbol): ExplainSidcResult {
   };
 }
 
-function scoreSymbol(symbol: CuratedSymbol, queryTerms: readonly string[]): number {
-  const fields = [
-    symbol.name,
-    ...symbol.aliases,
-    ...Object.values(symbol.parts).filter((value): value is string => typeof value === "string")
-  ];
-  const exactText = fields.join(" ").toLowerCase();
-  const fieldTerms = new Set(fields.flatMap(tokenize));
+function scoreSymbol(symbol: CuratedSymbol, queryTerms: readonly string[], normalizedQuery: string): number {
+  const fields = buildSearchFields(symbol);
 
-  return queryTerms.reduce((score, term) => {
-    if (fieldTerms.has(term)) {
-      return score + 3;
-    }
-    if (exactText.includes(term)) {
-      return score + 1;
-    }
-    return score;
-  }, 0);
+  return (
+    scoreExactPhrase(normalizedQuery, fields) +
+    queryTerms.reduce((score, term) => score + scoreQueryTerm(term, fields), 0)
+  );
+}
+
+function buildSearchFields(symbol: CuratedSymbol): SearchFields {
+  const partValues = Object.values(symbol.parts).filter((value): value is string => typeof value === "string");
+
+  return {
+    names: [toSearchField(symbol.name)],
+    aliases: symbol.aliases.map(toSearchField),
+    parts: partValues.map(toSearchField)
+  };
+}
+
+function toSearchField(value: string): SearchField {
+  return {
+    text: normalizeText(value),
+    terms: new Set(tokenize(value))
+  };
+}
+
+function scoreExactPhrase(query: string, fields: SearchFields): number {
+  return scoreFieldPhrase(query, fields.names, exactPhraseWeights.names) +
+    scoreFieldPhrase(query, fields.aliases, exactPhraseWeights.aliases) +
+    scoreFieldPhrase(query, fields.parts, exactPhraseWeights.parts);
+}
+
+function scoreFieldPhrase(query: string, fields: readonly SearchField[], weight: number): number {
+  return fields.some((field) => field.text === query) ? weight : 0;
+}
+
+function scoreQueryTerm(term: string, fields: SearchFields): number {
+  const exactScore = scoreTerm(term, fields, exactTokenWeights);
+  const relatedScore = scoreRelatedTerms(term, fields);
+  const partialScore = exactScore > 0 ? 0 : scorePartialTerm(term, fields);
+
+  return exactScore + relatedScore + partialScore;
+}
+
+function scoreRelatedTerms(term: string, fields: SearchFields): number {
+  const relatedTerms = expandTerm(term).filter((candidate) => candidate !== term);
+  if (relatedTerms.length === 0) {
+    return 0;
+  }
+
+  return Math.max(0, ...relatedTerms.map((relatedTerm) => scoreTerm(relatedTerm, fields, relatedTokenWeights)));
+}
+
+function expandTerm(term: string): string[] {
+  const group = synonymGroups.find((terms) => (terms as readonly string[]).includes(term));
+  return group ? [...group] : [term];
+}
+
+function scoreTerm(term: string, fields: SearchFields, weights: FieldScoreWeights): number {
+  return scoreFieldTerm(term, fields.names, weights.names) +
+    scoreFieldTerm(term, fields.aliases, weights.aliases) +
+    scoreFieldTerm(term, fields.parts, weights.parts);
+}
+
+function scoreFieldTerm(term: string, fields: readonly SearchField[], weight: number): number {
+  return fields.some((field) => field.terms.has(term)) ? weight : 0;
+}
+
+function scorePartialTerm(term: string, fields: SearchFields): number {
+  if (term.length < 3) {
+    return 0;
+  }
+
+  return scorePartialFieldTerm(term, fields.names, partialTokenWeights.names) +
+    scorePartialFieldTerm(term, fields.aliases, partialTokenWeights.aliases) +
+    scorePartialFieldTerm(term, fields.parts, partialTokenWeights.parts);
+}
+
+function scorePartialFieldTerm(term: string, fields: readonly SearchField[], weight: number): number {
+  return fields.some((field) => field.text.includes(term)) ? weight : 0;
 }
 
 function tokenize(value: string): string[] {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
+  return normalizeText(value)
     .trim()
     .split(/\s+/)
     .filter(Boolean);
+}
+
+function normalizeText(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
 function normalizeParts(parts: BuildSidcInput | SymbolParts): Record<string, string> {

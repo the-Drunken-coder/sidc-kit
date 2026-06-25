@@ -23,7 +23,9 @@ export const curatedSymbols = [
     name: "Friendly Land Unit Infantry Platoon",
     aliases: [
       "friendly infantry platoon",
+      "friendly inf platoon",
       "friend infantry platoon",
+      "friend inf platoon",
       "blue infantry platoon",
       "land infantry platoon"
     ],
@@ -42,7 +44,9 @@ export const curatedSymbols = [
     name: "Friendly Land Unit Infantry Company",
     aliases: [
       "friendly infantry company",
+      "friendly inf company",
       "friend infantry company",
+      "friend inf company",
       "blue infantry company",
       "land infantry company"
     ],
@@ -61,7 +65,9 @@ export const curatedSymbols = [
     name: "Hostile Land Unit Infantry Platoon",
     aliases: [
       "hostile infantry platoon",
+      "hostile inf platoon",
       "enemy infantry platoon",
+      "enemy inf platoon",
       "red infantry platoon",
       "land infantry platoon hostile"
     ],
@@ -80,9 +86,12 @@ export const curatedSymbols = [
     name: "Friendly Land Unit Armor Platoon",
     aliases: [
       "friendly armor platoon",
+      "friendly armour platoon",
+      "friendly tank platoon",
       "friendly armoured platoon",
       "friend tank platoon",
-      "blue armor platoon"
+      "blue armor platoon",
+      "land armor platoon"
     ],
     parts: {
       standard: "MIL-STD-2525D/APP-6D",
@@ -100,7 +109,9 @@ export const curatedSymbols = [
     name: "Friendly Land Unit Artillery Platoon",
     aliases: [
       "friendly artillery platoon",
+      "friendly arty platoon",
       "friend field artillery platoon",
+      "friend arty platoon",
       "blue artillery platoon",
       "land artillery platoon"
     ],
@@ -119,6 +130,7 @@ export const curatedSymbols = [
     name: "Friendly Land Unit Reconnaissance Platoon",
     aliases: [
       "friendly reconnaissance platoon",
+      "friendly recon platoon",
       "friend recon platoon",
       "blue reconnaissance platoon",
       "land recon platoon"
