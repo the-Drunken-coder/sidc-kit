@@ -15,6 +15,7 @@ const armorPlatoonSidc = "130310001412050000000000000000";
 const artilleryPlatoonSidc = "130310001413030000000000000000";
 const reconnaissancePlatoonSidc = "130310001412130000000000000000";
 const nonCuratedRenderableSidc = "130410001412110000000000000000";
+const unknownEntitySidc = "130310001400000000000000000000";
 const unknownDimensionFallbackSidc = "000000000000000000000000000000";
 const invalidIconFallbackSidc = "999999999999999999999999999999";
 
@@ -57,13 +58,50 @@ test("explainSidc returns expected curated parts", () => {
   assert.equal(result.parts.domain, "land");
   assert.equal(result.parts.entity, "infantry");
   assert.equal(result.parts.echelon, "platoon");
+  assert.equal(result.fields.entity.code, "1211000000");
+  assert.equal(result.fields.entity.coverage, "curated");
+  assert.deepEqual(result.unknownFields, []);
 });
 
-test("explainSidc remains limited to curated SIDCs", () => {
+test("explainSidc returns partial decomposition for non-curated renderable SIDCs", () => {
+  const result = explainSidc(nonCuratedRenderableSidc);
+
+  assert.equal(result.coverage, "partial");
+  assert.equal(result.name, undefined);
+  assert.deepEqual(result.aliases, []);
+  assert.equal(result.parts.affiliation, "neutral");
+  assert.equal(result.parts.symbolSet, "land unit");
+  assert.equal(result.parts.status, "present");
+  assert.equal(result.parts.domain, "land");
+  assert.equal(result.parts.entity, "infantry");
+  assert.equal(result.parts.echelon, "platoon/detachment");
+  assert.deepEqual(result.unknownFields, []);
+  assert.deepEqual(result.fields.affiliation, {
+    code: "04",
+    value: "neutral",
+    coverage: "known"
+  });
+});
+
+test("explainSidc rejects unsupported 30-digit SIDCs with a typed error", () => {
   assert.throws(
-    () => explainSidc(nonCuratedRenderableSidc),
+    () => explainSidc(unknownDimensionFallbackSidc),
     (error) => error instanceof SidcKitError && error.code === "UNSUPPORTED_SIDC"
   );
+});
+
+test("explainSidc marks unknown partial fields instead of guessing", () => {
+  const result = explainSidc(unknownEntitySidc);
+
+  assert.equal(result.coverage, "partial");
+  assert.equal(result.parts.affiliation, "friend");
+  assert.equal(result.parts.domain, "land");
+  assert.equal(result.parts.entity, undefined);
+  assert.deepEqual(result.unknownFields, ["entity"]);
+  assert.deepEqual(result.fields.entity, {
+    code: "0000000000",
+    coverage: "unknown"
+  });
 });
 
 test("searchSymbols finds symbols by natural-language alias", () => {

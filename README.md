@@ -9,7 +9,7 @@ It wraps the MIT-licensed [`milsymbol`](https://www.npmjs.com/package/milsymbol)
 - build known SIDCs from structured parts
 - render SIDCs to SVG with `milsymbol`
 
-V0 can render syntactically valid 30-digit SIDCs that `milsymbol` supports. Search, explain, and build intentionally support only a tiny curated set and do not claim exhaustive MIL-STD-2525 or STANAG APP-6 semantic coverage.
+V0 can render syntactically valid 30-digit SIDCs that `milsymbol` supports. Search and build intentionally support only a tiny curated set. Explain returns curated semantics when a SIDC is in that set and partial field decomposition for other renderable number SIDCs where `milsymbol` or the curated function-ID table provides a label. It does not claim exhaustive MIL-STD-2525 or STANAG APP-6 semantic coverage.
 
 ## Install
 
@@ -59,7 +59,15 @@ Performs deterministic lexical matching over curated names, aliases, and part la
 
 ### `explainSidc(sidc)`
 
-Explains a curated 30-digit SIDC into a stable JSON-serializable object. Unknown but syntactically valid SIDCs fail with `UNSUPPORTED_SIDC`.
+Explains a 30-digit SIDC into a stable JSON-serializable object.
+
+Curated SIDCs return `coverage: "curated"` with `name`, `aliases`, and the curated `parts` object. Non-curated SIDCs that `milsymbol` can validate return `coverage: "partial"` with:
+
+- `parts`: only the interpreted fields
+- `fields`: per-field `code`, optional `value`, and `coverage`
+- `unknownFields`: field names that were present in the SIDC but not interpreted
+
+Unsupported or malformed SIDCs still fail with typed `SidcKitError` codes such as `INVALID_SIDC` or `UNSUPPORTED_SIDC`.
 
 ### `buildSidc(parts)`
 
@@ -73,6 +81,8 @@ Renders a syntactically valid 30-digit SIDC with `milsymbol` and returns SVG plu
 ## Coverage
 
 Rendering coverage follows the installed `milsymbol` package. The curated semantic set includes a few common land-unit examples such as friendly infantry platoon, hostile infantry platoon, armor platoon, artillery platoon, reconnaissance platoon, and infantry company.
+
+Partial decomposition is intentionally limited to affiliation, symbol set, status, domain, echelon, and entity. Entity labels come from function IDs already present in the curated table; unknown function IDs are reported through `unknownFields` instead of guessed.
 
 Image-based reverse lookup is intentionally deferred.
 

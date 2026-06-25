@@ -1,7 +1,7 @@
-import ms from "milsymbol";
+import ms, { type SymbolMetadata } from "milsymbol";
 
 import { curatedSymbols, type CuratedSymbol, type SymbolParts } from "./data/symbols.js";
-import { SidcKitError } from "./errors.js";
+import { SidcKitError, type SidcKitErrorCode } from "./errors.js";
 
 export { SidcKitError } from "./errors.js";
 export type { CuratedSymbol, SymbolParts } from "./data/symbols.js";
@@ -25,19 +25,48 @@ export type RenderSymbolResult = {
   };
 };
 
-export type ExplainSidcResult = {
+export type ExplainSidcCoverage = "curated" | "partial";
+
+export type SidcFieldCoverage = "curated" | "known" | "unknown";
+
+export type SidcField = {
+  code: string;
+  coverage: SidcFieldCoverage;
+  value?: string;
+};
+
+export type SidcFieldName = "affiliation" | "symbolSet" | "status" | "domain" | "echelon" | "entity";
+
+export type ExplainSidcFields = Record<SidcFieldName, SidcField>;
+
+export type PartialSymbolParts = Partial<SymbolParts>;
+
+type BaseExplainSidcResult = {
   sidc: string;
-  name: string;
   aliases: string[];
+  fields: ExplainSidcFields;
+  unknownFields: SidcFieldName[];
+};
+
+export type CuratedExplainSidcResult = BaseExplainSidcResult & {
+  name: string;
   parts: SymbolParts;
   coverage: "curated";
 };
+
+export type PartialExplainSidcResult = BaseExplainSidcResult & {
+  name?: never;
+  parts: PartialSymbolParts;
+  coverage: "partial";
+};
+
+export type ExplainSidcResult = CuratedExplainSidcResult | PartialExplainSidcResult;
 
 export type SymbolSearchOptions = {
   limit?: number;
 };
 
-export type SymbolSearchResult = ExplainSidcResult & {
+export type SymbolSearchResult = CuratedExplainSidcResult & {
   score: number;
 };
 
@@ -50,16 +79,25 @@ export type BuildSidcInput = Partial<Omit<SymbolParts, "standard" | "status" | "
 const sidcPattern = /^\d{30}$/;
 const disambiguatingPartKeys = ["entityType", "entitySubtype", "echelon"] as const;
 type DisambiguatingPartKey = (typeof disambiguatingPartKeys)[number];
+type MilsymbolSymbol = InstanceType<typeof ms.Symbol>;
+type EntityParts = Pick<SymbolParts, "entity"> & Partial<Pick<SymbolParts, "entityType" | "entitySubtype">>;
+
+const functionEntityParts = new Map<string, EntityParts>(
+  (curatedSymbols as readonly CuratedSymbol[]).map((symbol) => [
+    getFunctionId(symbol.sidc),
+    {
+      entity: symbol.parts.entity,
+      ...(symbol.parts.entityType ? { entityType: symbol.parts.entityType } : {}),
+      ...(symbol.parts.entitySubtype ? { entitySubtype: symbol.parts.entitySubtype } : {})
+    }
+  ])
+);
 
 export function renderSymbol(sidc: string, options: RenderSymbolOptions = {}): RenderSymbolResult {
   const normalizedSidc = normalizeSidc(sidc);
 
   try {
-    const symbol = new ms.Symbol(normalizedSidc, options);
-    const metadata = symbol.getMetadata();
-    if (symbol.isValid() !== true || metadata.dimensionUnknown) {
-      throw new SidcKitError("RENDER_FAILED", `milsymbol does not support SIDC ${normalizedSidc}.`);
-    }
+    const { symbol } = createSupportedSymbol(normalizedSidc, options, "RENDER_FAILED", "render");
 
     const svg = symbol.asSVG();
     const anchor = toPoint(symbol.getAnchor?.());
@@ -85,8 +123,13 @@ export function renderSymbol(sidc: string, options: RenderSymbolOptions = {}): R
 
 export function explainSidc(sidc: string): ExplainSidcResult {
   const normalizedSidc = normalizeSidc(sidc);
-  const symbol = requireCuratedSidc(normalizedSidc);
-  return explainSymbol(symbol);
+  const symbol = findCuratedSidc(normalizedSidc);
+  if (symbol) {
+    return explainSymbol(symbol);
+  }
+
+  const { metadata } = createSupportedSymbol(normalizedSidc, {}, "UNSUPPORTED_SIDC", "explain");
+  return explainPartialSidc(normalizedSidc, metadata);
 }
 
 export function searchSymbols(query: string, options: SymbolSearchOptions = {}): SymbolSearchResult[] {
@@ -147,21 +190,34 @@ function normalizeSidc(sidc: string): string {
   return normalizedSidc;
 }
 
-function requireCuratedSidc(sidc: string): CuratedSymbol {
-  const symbol = curatedSymbols.find((candidate) => candidate.sidc === sidc);
-  if (!symbol) {
-    throw new SidcKitError("UNSUPPORTED_SIDC", `SIDC ${sidc} is not in the curated V0 fixture set.`);
-  }
-  return symbol;
+function findCuratedSidc(sidc: string): CuratedSymbol | undefined {
+  return curatedSymbols.find((candidate) => candidate.sidc === sidc);
 }
 
-function explainSymbol(symbol: CuratedSymbol): ExplainSidcResult {
+function explainSymbol(symbol: CuratedSymbol): CuratedExplainSidcResult {
+  const fields = buildFields(symbol.sidc, symbol.parts, "curated");
   return {
     sidc: symbol.sidc,
     name: symbol.name,
     aliases: [...symbol.aliases],
     parts: { ...symbol.parts },
-    coverage: "curated"
+    coverage: "curated",
+    fields,
+    unknownFields: getUnknownFields(fields)
+  };
+}
+
+function explainPartialSidc(sidc: string, metadata: SymbolMetadata): PartialExplainSidcResult {
+  const parts = buildPartialParts(metadata);
+  const fields = buildFields(sidc, parts, "known");
+
+  return {
+    sidc,
+    aliases: [],
+    parts,
+    coverage: "partial",
+    fields,
+    unknownFields: getUnknownFields(fields)
   };
 }
 
@@ -226,6 +282,150 @@ function formatPartList(parts: readonly string[]): string {
   }
 
   return `${parts.slice(0, -1).join(", ")}, or ${parts[parts.length - 1]}`;
+}
+
+function createSupportedSymbol(
+  sidc: string,
+  options: RenderSymbolOptions,
+  failureCode: SidcKitErrorCode,
+  action: "explain" | "render"
+): { symbol: MilsymbolSymbol; metadata: SymbolMetadata } {
+  try {
+    const symbol = new ms.Symbol(sidc, options);
+    const metadata = symbol.getMetadata();
+    if (symbol.isValid() !== true || metadata.numberSIDC !== true || metadata.dimensionUnknown) {
+      throw new SidcKitError(failureCode, `milsymbol does not support SIDC ${sidc}.`);
+    }
+
+    return { symbol, metadata };
+  } catch (error) {
+    if (error instanceof SidcKitError) {
+      throw error;
+    }
+
+    throw new SidcKitError(
+      failureCode,
+      `Failed to ${action} SIDC ${sidc}: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+function buildPartialParts(metadata: SymbolMetadata): PartialSymbolParts {
+  const domain = normalizeDimension(metadata.dimension);
+  const entityParts = functionEntityParts.get(metadata.functionid);
+  const symbolSet = getSymbolSetLabel(domain, metadata);
+  const affiliation = normalizeMetadataLabel(metadata.affiliation);
+  const echelon = normalizeMetadataLabel(metadata.echelon);
+  const parts: PartialSymbolParts = {
+    status: getStatusLabel(metadata)
+  };
+
+  if (symbolSet) {
+    parts.symbolSet = symbolSet;
+  }
+  if (affiliation) {
+    parts.affiliation = affiliation;
+  }
+  if (domain) {
+    parts.domain = domain;
+  }
+  if (entityParts) {
+    Object.assign(parts, entityParts);
+  }
+  if (echelon) {
+    parts.echelon = echelon;
+  }
+
+  return parts;
+}
+
+function buildFields(
+  sidc: string,
+  parts: PartialSymbolParts,
+  knownCoverage: Exclude<SidcFieldCoverage, "unknown">
+): ExplainSidcFields {
+  return {
+    affiliation: buildField(sidc.slice(2, 4), parts.affiliation, knownCoverage),
+    symbolSet: buildField(sidc.slice(4, 6), parts.symbolSet, knownCoverage),
+    status: buildField(sidc.slice(6, 7), parts.status, knownCoverage),
+    domain: buildField(sidc.slice(4, 6), parts.domain, knownCoverage),
+    echelon: buildField(sidc.slice(8, 10), parts.echelon, knownCoverage),
+    entity: buildField(getFunctionId(sidc), parts.entity, knownCoverage)
+  };
+}
+
+function buildField(
+  code: string,
+  value: string | undefined,
+  knownCoverage: Exclude<SidcFieldCoverage, "unknown">
+): SidcField {
+  if (!value) {
+    return {
+      code,
+      coverage: "unknown"
+    };
+  }
+
+  return {
+    code,
+    value,
+    coverage: knownCoverage
+  };
+}
+
+function getUnknownFields(fields: ExplainSidcFields): SidcFieldName[] {
+  return Object.entries(fields)
+    .filter(([, field]) => field.coverage === "unknown")
+    .map(([fieldName]) => fieldName as SidcFieldName);
+}
+
+function getFunctionId(sidc: string): string {
+  return sidc.slice(10, 20);
+}
+
+function getSymbolSetLabel(domain: string | undefined, metadata: SymbolMetadata): string | undefined {
+  if (!domain) {
+    return undefined;
+  }
+
+  if (metadata.unit === true) {
+    return `${domain} unit`;
+  }
+
+  if (metadata.installation === true) {
+    return `${domain} installation`;
+  }
+
+  if (metadata.activity === true) {
+    return `${domain} activity`;
+  }
+
+  return undefined;
+}
+
+function getStatusLabel(metadata: SymbolMetadata): string {
+  return (
+    normalizeMetadataLabel(metadata.notpresent) ??
+    normalizeMetadataLabel(metadata.condition) ??
+    "present"
+  );
+}
+
+function normalizeDimension(value: SymbolMetadata["dimension"]): string | undefined {
+  if (value === "Ground") {
+    return "land";
+  }
+
+  return normalizeMetadataLabel(value);
+}
+
+function normalizeMetadataLabel(value: string | undefined): string | undefined {
+  const normalized = value?.trim();
+  if (!normalized || normalized === "undefined") {
+    return undefined;
+  }
+
+  return normalized.toLowerCase();
 }
 
 function toPoint(value: unknown): RenderSymbolResult["anchor"] {
