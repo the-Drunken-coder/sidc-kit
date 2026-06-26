@@ -96,15 +96,43 @@ function normalizeSvgInput(input: string): string | undefined {
 
 function decodeInlineSvgDataUrl(input: string): string {
   const trimmed = input.trim();
-  const dataUrl = /^data:image\/svg\+xml(?:;[^,]+)*,([\s\S]*)$/i.exec(trimmed);
+  const dataUrl = /^data:image\/svg\+xml((?:;[^,]+)*),([\s\S]*)$/i.exec(trimmed);
   if (!dataUrl) {
     return trimmed;
   }
 
+  const metadata = dataUrl[1];
+  const payload = dataUrl[2];
+  if (/(?:^|;)base64(?:;|$)/i.test(metadata)) {
+    return decodeBase64Utf8(payload) ?? payload;
+  }
+
   try {
-    return decodeURIComponent(dataUrl[1]);
+    return decodeURIComponent(payload);
   } catch {
-    return dataUrl[1];
+    return payload;
+  }
+}
+
+function decodeBase64Utf8(payload: string): string | undefined {
+  if (typeof globalThis.atob !== "function") {
+    return undefined;
+  }
+
+  try {
+    const binary = globalThis.atob(decodeUriComponentOrOriginal(payload).replace(/\s/g, ""));
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  } catch {
+    return undefined;
+  }
+}
+
+function decodeUriComponentOrOriginal(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
   }
 }
 

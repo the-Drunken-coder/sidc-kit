@@ -44,6 +44,17 @@ const unknownEntitySidc = "130310001400000000000000000000";
 const unknownDimensionFallbackSidc = "000000000000000000000000000000";
 const invalidIconFallbackSidc = "999999999999999999999999999999";
 
+function encodeBase64Utf8(value) {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+
+  return btoa(binary);
+}
+
 const expandedCatalogSidcs = [
   friendlyAirFighterSidc,
   friendlyAirRotaryWingSidc,
@@ -347,6 +358,18 @@ test("identifySymbol normalizes near-exact SVG input", () => {
 
   assert.equal(results.length, 1);
   assert.equal(results[0].sidc, armorPlatoonSidc);
+  assert.equal(results[0].confidence, 1);
+  assert.equal(results[0].evidence.exact, true);
+});
+
+test("identifySymbol normalizes base64 SVG data URLs", () => {
+  const svg = renderSymbol(infantryPlatoonSidc, { size: 40 }).svg;
+  const exportedSvg = `<!-- exported by Café Renderer -->\n${svg}`;
+  const dataUrlSvg = `data:image/svg+xml;charset=utf-8;base64,${encodeBase64Utf8(exportedSvg)}`;
+  const results = identifySymbol(dataUrlSvg, { size: 40 });
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].sidc, infantryPlatoonSidc);
   assert.equal(results[0].confidence, 1);
   assert.equal(results[0].evidence.exact, true);
 });
