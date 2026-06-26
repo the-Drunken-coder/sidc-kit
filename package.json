@@ -3,18 +3,26 @@
   "version": "0.3.2",
   "description": "A small TypeScript toolkit for rendering SIDCs and working with curated SIDC semantics.",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
+  "browser": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "sidc-kit": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "browser": "./dist/index.js",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
     "dist",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "repository": {
     "type": "git",
@@ -26,8 +34,11 @@
   "homepage": "https://github.com/the-Drunken-coder/sidc-kit#readme",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "prepack": "npm run build",
-    "test": "npm run build && node --test"
+    "check:fixtures": "node scripts/generate-curated-fixtures.mjs --check",
+    "generate:fixtures": "node scripts/generate-curated-fixtures.mjs",
+    "prepack": "npm run check:fixtures && npm run build",
+    "test": "npm run check:fixtures && npm run build && node --test && node scripts/browser-smoke.mjs",
+    "test:browser": "npm run build && node scripts/browser-smoke.mjs"
   },
   "keywords": [
     "sidc",
@@ -44,6 +55,8 @@
     "milsymbol": "^3.0.4"
   },
   "devDependencies": {
+    "@types/node": "^20.19.43",
+    "esbuild": "^0.28.1",
     "typescript": "^5.9.3"
   },
   "engines": {
