@@ -404,6 +404,20 @@ test("identifySymbol caps near-limit fuzzy SVG comparison work", () => {
   assert.deepEqual(identifySymbol(nearLimitSvg, { minConfidence: 0 }), []);
 });
 
+test("identifySymbol returns no candidates when limit is zero", () => {
+  const svg = renderSymbol(infantryPlatoonSidc, { size: 40 }).svg;
+
+  assert.deepEqual(identifySymbol(svg, { limit: 0, minConfidence: 0 }), []);
+});
+
+test("identifySymbol rejects unsafe candidate render sizes before catalog matching", () => {
+  const svg = renderSymbol(infantryPlatoonSidc, { size: 40 }).svg;
+
+  assert.deepEqual(identifySymbol(svg, { size: 4097, minConfidence: 0 }), []);
+  assert.deepEqual(identifySymbol(svg, { size: Number.POSITIVE_INFINITY, minConfidence: 0 }), []);
+  assert.deepEqual(identifySymbol(svg, { size: 0, minConfidence: 0 }), []);
+});
+
 test("searchSymbols weights exact names, aliases, and parts predictably", () => {
   assert.equal(searchSymbols("Friendly Land Unit Infantry Platoon")[0]?.sidc, infantryPlatoonSidc);
   assert.equal(searchSymbols("friend infantry company")[0]?.sidc, infantryCompanySidc);

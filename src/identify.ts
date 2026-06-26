@@ -7,6 +7,7 @@ const defaultIdentifyMinConfidence = 0.99;
 const maxIdentifySvgInputLength = 10_000;
 const maxIdentifyFuzzySvgLength = 4_000;
 const maxIdentifyFuzzyDistanceCells = 500_000;
+const maxIdentifyCandidateRenderSize = 4096;
 
 export function identifySymbol(input: string, options: IdentifySymbolOptions = {}): IdentifySymbolResult[] {
   const normalizedInput = normalizeSvgInput(input);
@@ -17,6 +18,12 @@ export function identifySymbol(input: string, options: IdentifySymbolOptions = {
   const { limit = curatedSymbols.length, minConfidence = defaultIdentifyMinConfidence, ...renderOptions } = options;
   const cappedLimit = Math.max(0, limit);
   const threshold = clampConfidence(minConfidence);
+  if (cappedLimit === 0) {
+    return [];
+  }
+  if (!hasSafeCandidateRenderOptions(renderOptions)) {
+    return [];
+  }
 
   return curatedSymbols
     .map((symbol) => {
@@ -56,6 +63,11 @@ export function identifySymbol(input: string, options: IdentifySymbolOptions = {
     .sort((left, right) => right.similarity - left.similarity || left.result.name.localeCompare(right.result.name))
     .slice(0, cappedLimit)
     .map((candidate) => candidate.result);
+}
+
+function hasSafeCandidateRenderOptions(options: Pick<IdentifySymbolOptions, "fill" | "frame" | "size">): boolean {
+  return options.size === undefined ||
+    (Number.isFinite(options.size) && options.size > 0 && options.size <= maxIdentifyCandidateRenderSize);
 }
 
 function normalizeSvgInput(input: string): string | undefined {
