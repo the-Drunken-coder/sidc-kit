@@ -2,6 +2,10 @@
 
 Prefer simple, elegant solutions over complex ones.
 
+Apply YAGNI: do not add abstractions, options, dependencies, or feature hooks until a current requirement needs them.
+
+Apply Single-Line Coding Principles: prefer changes that are localized to one obvious line or data entry when practical, and structure tables, fixtures, and mappings so future additions stay easy to review.
+
 The role of this file is to describe common mistakes and confusion points that agents might encounter as they work in this project.
 
 If you encounter something surprising, tell the developer and add the lesson here so future agents do not rediscover the same failure.
