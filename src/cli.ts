@@ -129,7 +129,9 @@ function runExplain(args: readonly string[]): number {
     return 0;
   }
 
-  writeOutput(`${result.name}\n`);
+  if (result.coverage === "curated") {
+    writeOutput(`${result.name}\n`);
+  }
   writeOutput(`SIDC: ${result.sidc}\n`);
   writeOutput(`Coverage: ${result.coverage}\n`);
   writeOutput("Parts:\n");

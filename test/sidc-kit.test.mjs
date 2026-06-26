@@ -31,6 +31,7 @@ const friendlyAirportSidc = "130320000012080300000000000000";
 const friendlyCheckpointSidc = "130325000013030000000000000000";
 const friendlyWaypointSidc = "130325000013180000000000000000";
 const nonCuratedRenderableSidc = "130410001412110000000000000000";
+const neutralArtilleryPlatoonSidc = "130410001413030000000000000000";
 const nonCuratedUnlabeledStatusSidc = "130410101412110000000000000000";
 const unknownEntitySidc = "130310001400000000000000000000";
 const unknownDimensionFallbackSidc = "000000000000000000000000000000";
@@ -174,10 +175,21 @@ test("explainSidc returns partial decomposition for non-curated renderable SIDCs
   assert.equal(result.parts.echelon, "platoon/detachment");
   assert.deepEqual(result.unknownFields, []);
   assert.deepEqual(result.fields.affiliation, {
-    code: "04",
+    code: "4",
     value: "neutral",
     coverage: "known"
   });
+});
+
+test("explainSidc scopes partial entity labels by symbol set", () => {
+  const result = explainSidc(neutralArtilleryPlatoonSidc);
+
+  assert.equal(result.coverage, "partial");
+  assert.equal(result.parts.symbolSet, "land unit");
+  assert.equal(result.parts.entity, "artillery");
+  assert.equal(result.parts.entityType, undefined);
+  assert.equal(result.fields.entity.code, "1303000000");
+  assert.equal(result.fields.entity.coverage, "known");
 });
 
 test("explainSidc marks unlabeled non-present status unknown", () => {
@@ -287,6 +299,14 @@ test("identifySymbol rejects oversized SVG input before fuzzy comparison", () =>
   const oversizedSvg = `<svg>${"x".repeat(10_001)}</svg>`;
 
   assert.deepEqual(identifySymbol(oversizedSvg, { minConfidence: 0 }), []);
+});
+
+test("identifySymbol skips expensive fuzzy scoring for large edited SVG input", () => {
+  const svg = renderSymbol(infantryPlatoonSidc, { size: 40 }).svg;
+  const largeEditedSvg = svg.replace("</svg>", `<metadata>${"x".repeat(4_500)}</metadata></svg>`);
+
+  assert.ok(largeEditedSvg.length < 10_000);
+  assert.deepEqual(identifySymbol(largeEditedSvg, { minConfidence: 0 }), []);
 });
 
 test("searchSymbols weights exact names, aliases, and parts predictably", () => {

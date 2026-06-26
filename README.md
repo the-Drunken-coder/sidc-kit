@@ -137,8 +137,6 @@ Reverse lookup coverage is the same curated set and currently accepts clean SVG 
 
 Partial decomposition is intentionally limited to affiliation, symbol set, status, domain, echelon, and entity. Entity labels come from function IDs already present in the curated table; unknown function IDs are reported through `unknownFields` instead of guessed. Status is labeled only when it is present or when `milsymbol` exposes a semantic condition label; otherwise status is reported through `unknownFields`.
 
-Partial decomposition is intentionally limited to affiliation, symbol set, status, domain, echelon, and entity. Entity labels come from function IDs already present in the curated table; unknown function IDs are reported through `unknownFields` instead of guessed. Status is labeled only when it is present or when `milsymbol` exposes a semantic condition label; otherwise status is reported through `unknownFields`.
-
 Image-based reverse lookup is intentionally deferred.
 
 ## Changelog

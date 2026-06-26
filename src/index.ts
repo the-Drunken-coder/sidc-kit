@@ -97,6 +97,7 @@ export type BuildSidcInput = Partial<Omit<SymbolParts, "standard" | "status" | "
 const sidcPattern = /^\d{30}$/;
 const defaultIdentifyMinConfidence = 0.99;
 const maxIdentifySvgInputLength = 10_000;
+const maxIdentifyFuzzySvgLength = 4_000;
 const disambiguatingPartKeys = ["entityType", "entitySubtype", "echelon"] as const;
 type DisambiguatingPartKey = (typeof disambiguatingPartKeys)[number];
 type SearchFieldGroup = "names" | "aliases" | "parts";
@@ -142,7 +143,7 @@ type EntityParts = Pick<SymbolParts, "entity"> & Partial<Pick<SymbolParts, "enti
 
 const functionEntityParts = new Map<string, EntityParts>(
   (curatedSymbols as readonly CuratedSymbol[]).map((symbol) => [
-    getFunctionId(symbol.sidc),
+    buildFunctionEntityKey(symbol.parts.symbolSet, getFunctionId(symbol.sidc)),
     {
       entity: symbol.parts.entity,
       ...(symbol.parts.entityType ? { entityType: symbol.parts.entityType } : {}),
@@ -238,7 +239,7 @@ export function identifySymbol(input: string, options: IdentifySymbolOptions = {
 
       const similarity = svgSimilarity(normalizedInput, normalizedCandidate, threshold);
       const exact = normalizedInput === normalizedCandidate;
-      if (similarity < threshold) {
+      if (similarity === undefined || similarity < threshold) {
         return undefined;
       }
 
@@ -457,7 +458,7 @@ function scorePartialFieldTerm(term: string, fields: readonly SearchField[], wei
   return fields.some((field) => field.text.includes(term)) ? weight : 0;
 }
 
-function svgSimilarity(left: string, right: string, minSimilarity: number): number {
+function svgSimilarity(left: string, right: string, minSimilarity: number): number | undefined {
   if (left === right) {
     return 1;
   }
@@ -465,6 +466,9 @@ function svgSimilarity(left: string, right: string, minSimilarity: number): numb
   const maxLength = Math.max(left.length, right.length);
   if (maxLength === 0) {
     return 1;
+  }
+  if (maxLength > maxIdentifyFuzzySvgLength) {
+    return undefined;
   }
 
   const lengthSimilarity = 1 - Math.abs(left.length - right.length) / maxLength;
@@ -584,8 +588,10 @@ function createSupportedSymbol(
 
 function buildPartialParts(sidc: string, metadata: SymbolMetadata): PartialSymbolParts {
   const domain = normalizeDimension(metadata.dimension);
-  const entityParts = functionEntityParts.get(metadata.functionid);
   const symbolSet = getSymbolSetLabel(domain, metadata);
+  const entityParts = symbolSet
+    ? functionEntityParts.get(buildFunctionEntityKey(symbolSet, metadata.functionid))
+    : undefined;
   const affiliation = normalizeMetadataLabel(metadata.affiliation);
   const status = getStatusLabel(sidc.slice(6, 7), metadata);
   const echelon = normalizeMetadataLabel(metadata.echelon);
@@ -619,7 +625,7 @@ function buildFields(
   knownCoverage: Exclude<SidcFieldCoverage, "unknown">
 ): ExplainSidcFields {
   return {
-    affiliation: buildField(sidc.slice(2, 4), parts.affiliation, knownCoverage),
+    affiliation: buildField(sidc.slice(3, 4), parts.affiliation, knownCoverage),
     symbolSet: buildField(sidc.slice(4, 6), parts.symbolSet, knownCoverage),
     status: buildField(sidc.slice(6, 7), parts.status, knownCoverage),
     domain: buildField(sidc.slice(4, 6), parts.domain, knownCoverage),
@@ -655,6 +661,10 @@ function getUnknownFields(fields: ExplainSidcFields): SidcFieldName[] {
 
 function getFunctionId(sidc: string): string {
   return sidc.slice(10, 20);
+}
+
+function buildFunctionEntityKey(symbolSet: string, functionId: string): string {
+  return `${symbolSet}:${functionId}`;
 }
 
 function getSymbolSetLabel(domain: string | undefined, metadata: SymbolMetadata): string | undefined {

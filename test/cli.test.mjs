@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cliPath = path.join(rootDir, "dist", "cli.js");
 const infantryPlatoonSidc = "130310001412110000000000000000";
+const nonCuratedRenderableSidc = "130410001412110000000000000000";
 
 function runCli(args) {
   return spawnSync(process.execPath, [cliPath, ...args], {
@@ -62,6 +63,16 @@ test("CLI explains a curated SIDC as JSON", () => {
   assert.equal(parsed.sidc, infantryPlatoonSidc);
   assert.equal(parsed.name, "Friendly Land Unit Infantry Platoon");
   assert.equal(parsed.parts.echelon, "platoon");
+});
+
+test("CLI explains a partial SIDC without an undefined text heading", () => {
+  const result = runCli(["explain", nonCuratedRenderableSidc]);
+
+  assert.equal(result.status, 0);
+  assert.equal(result.stderr, "");
+  assert.doesNotMatch(result.stdout, /undefined/);
+  assert.match(result.stdout, new RegExp(`^SIDC: ${nonCuratedRenderableSidc}\\nCoverage: partial\\nParts:\\n`));
+  assert.match(result.stdout, /  entity: infantry\n/);
 });
 
 test("CLI builds a curated SIDC from structured options", () => {
