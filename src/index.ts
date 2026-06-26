@@ -98,6 +98,7 @@ const sidcPattern = /^\d{30}$/;
 const defaultIdentifyMinConfidence = 0.99;
 const maxIdentifySvgInputLength = 10_000;
 const maxIdentifyFuzzySvgLength = 4_000;
+const maxIdentifyFuzzyDistanceCells = 500_000;
 const disambiguatingPartKeys = ["entityType", "entitySubtype", "echelon"] as const;
 type DisambiguatingPartKey = (typeof disambiguatingPartKeys)[number];
 type SearchFieldGroup = "names" | "aliases" | "parts";
@@ -139,7 +140,18 @@ const synonymGroups = [
   ["inf", "infantry"]
 ] as const;
 type MilsymbolSymbol = InstanceType<typeof ms.Symbol>;
+type CatalogSymbolSetLabels = Pick<SymbolParts, "symbolSet" | "domain">;
 type EntityParts = Pick<SymbolParts, "entity"> & Partial<Pick<SymbolParts, "entityType" | "entitySubtype">>;
+
+const catalogSymbolSetLabelsByCode = new Map<string, CatalogSymbolSetLabels>(
+  (curatedSymbols as readonly CuratedSymbol[]).map((symbol) => [
+    getSymbolSetCode(symbol.sidc),
+    {
+      symbolSet: symbol.parts.symbolSet,
+      domain: symbol.parts.domain
+    }
+  ])
+);
 
 const functionEntityParts = new Map<string, EntityParts>(
   (curatedSymbols as readonly CuratedSymbol[]).map((symbol) => [
@@ -470,6 +482,9 @@ function svgSimilarity(left: string, right: string, minSimilarity: number): numb
   if (maxLength > maxIdentifyFuzzySvgLength) {
     return undefined;
   }
+  if (left.length * right.length > maxIdentifyFuzzyDistanceCells) {
+    return undefined;
+  }
 
   const lengthSimilarity = 1 - Math.abs(left.length - right.length) / maxLength;
   if (lengthSimilarity < minSimilarity) {
@@ -587,8 +602,9 @@ function createSupportedSymbol(
 }
 
 function buildPartialParts(sidc: string, metadata: SymbolMetadata): PartialSymbolParts {
-  const domain = normalizeDimension(metadata.dimension);
-  const symbolSet = getSymbolSetLabel(domain, metadata);
+  const catalogLabels = catalogSymbolSetLabelsByCode.get(getSymbolSetCode(sidc));
+  const domain = catalogLabels?.domain ?? normalizeDimension(metadata.dimension);
+  const symbolSet = catalogLabels?.symbolSet ?? getSymbolSetLabel(domain, metadata);
   const entityParts = symbolSet
     ? functionEntityParts.get(buildFunctionEntityKey(symbolSet, metadata.functionid))
     : undefined;
@@ -661,6 +677,10 @@ function getUnknownFields(fields: ExplainSidcFields): SidcFieldName[] {
 
 function getFunctionId(sidc: string): string {
   return sidc.slice(10, 20);
+}
+
+function getSymbolSetCode(sidc: string): string {
+  return sidc.slice(4, 6);
 }
 
 function buildFunctionEntityKey(symbolSet: string, functionId: string): string {

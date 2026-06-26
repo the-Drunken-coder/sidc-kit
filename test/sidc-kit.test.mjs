@@ -32,6 +32,12 @@ const friendlyCheckpointSidc = "130325000013030000000000000000";
 const friendlyWaypointSidc = "130325000013180000000000000000";
 const nonCuratedRenderableSidc = "130410001412110000000000000000";
 const neutralArtilleryPlatoonSidc = "130410001413030000000000000000";
+const neutralAirFighterSidc = "130401000011010400000000000000";
+const neutralSeaDestroyerSidc = "130430000012020300000000000000";
+const neutralSubmarineSidc = "130435000011010000000000000000";
+const neutralTankSidc = "130415000012020000000000000000";
+const neutralBaseSidc = "130420000012080200000000000000";
+const neutralCheckpointSidc = "130425000013030000000000000000";
 const nonCuratedUnlabeledStatusSidc = "130410101412110000000000000000";
 const unknownEntitySidc = "130310001400000000000000000000";
 const unknownDimensionFallbackSidc = "000000000000000000000000000000";
@@ -192,6 +198,76 @@ test("explainSidc scopes partial entity labels by symbol set", () => {
   assert.equal(result.fields.entity.coverage, "known");
 });
 
+test("explainSidc reuses catalog symbol-set labels for non-curated expanded variants", () => {
+  const cases = [
+    [
+      neutralAirFighterSidc,
+      {
+        symbolSet: "air",
+        domain: "air",
+        entity: "aircraft",
+        entityType: "fighter"
+      }
+    ],
+    [
+      neutralSeaDestroyerSidc,
+      {
+        symbolSet: "sea surface",
+        domain: "sea surface",
+        entity: "surface combatant",
+        entityType: "destroyer"
+      }
+    ],
+    [
+      neutralSubmarineSidc,
+      {
+        symbolSet: "sea subsurface",
+        domain: "sea subsurface",
+        entity: "submarine"
+      }
+    ],
+    [
+      neutralTankSidc,
+      {
+        symbolSet: "land equipment",
+        domain: "land equipment",
+        entity: "tank"
+      }
+    ],
+    [
+      neutralBaseSidc,
+      {
+        symbolSet: "land installation",
+        domain: "land installation",
+        entity: "military infrastructure",
+        entityType: "base"
+      }
+    ],
+    [
+      neutralCheckpointSidc,
+      {
+        symbolSet: "control measure",
+        domain: "control measure",
+        entity: "command and control point",
+        entityType: "checkpoint"
+      }
+    ]
+  ];
+
+  for (const [sidc, expected] of cases) {
+    const result = explainSidc(sidc);
+
+    assert.equal(result.coverage, "partial", sidc);
+    assert.equal(result.parts.affiliation, "neutral", sidc);
+    assert.equal(result.parts.symbolSet, expected.symbolSet, sidc);
+    assert.equal(result.parts.domain, expected.domain, sidc);
+    assert.equal(result.parts.entity, expected.entity, sidc);
+    assert.equal(result.parts.entityType, expected.entityType, sidc);
+    assert.equal(result.fields.entity.coverage, "known", sidc);
+    assert.ok(!result.unknownFields.includes("entity"), sidc);
+  }
+});
+
 test("explainSidc marks unlabeled non-present status unknown", () => {
   const result = explainSidc(nonCuratedUnlabeledStatusSidc);
 
@@ -307,6 +383,13 @@ test("identifySymbol skips expensive fuzzy scoring for large edited SVG input", 
 
   assert.ok(largeEditedSvg.length < 10_000);
   assert.deepEqual(identifySymbol(largeEditedSvg, { minConfidence: 0 }), []);
+});
+
+test("identifySymbol caps near-limit fuzzy SVG comparison work", () => {
+  const nearLimitSvg = `<svg>${"x".repeat(3_900)}</svg>`;
+
+  assert.ok(nearLimitSvg.length < 4_000);
+  assert.deepEqual(identifySymbol(nearLimitSvg, { minConfidence: 0 }), []);
 });
 
 test("searchSymbols weights exact names, aliases, and parts predictably", () => {
