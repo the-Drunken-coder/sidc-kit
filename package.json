@@ -3,6 +3,7 @@
   "version": "0.3.2",
   "description": "A small TypeScript toolkit for rendering SIDCs and working with curated SIDC semantics.",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "browser": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -22,6 +22,10 @@ type EntityParts = Pick<SymbolParts, "entity"> & Partial<Pick<SymbolParts, "enti
 
 const typedCuratedSymbols: readonly CuratedSymbol[] = curatedSymbols;
 
+const curatedSymbolsBySidc = new Map<string, CuratedSymbol>(
+  typedCuratedSymbols.map((symbol) => [symbol.sidc, symbol])
+);
+
 const catalogSymbolSetLabelsByCode = new Map<string, CatalogSymbolSetLabels>(
   typedCuratedSymbols.map((symbol) => [
     getSymbolSetCode(symbol.sidc),
@@ -68,7 +72,7 @@ export function explainSymbol(symbol: CuratedSymbol): CuratedExplainSidcResult {
 }
 
 function findCuratedSidc(sidc: string): CuratedSymbol | undefined {
-  return curatedSymbols.find((candidate) => candidate.sidc === sidc);
+  return curatedSymbolsBySidc.get(sidc);
 }
 
 function explainPartialSidc(sidc: string, metadata: SymbolMetadata): PartialExplainSidcResult {

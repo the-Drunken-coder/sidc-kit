@@ -9,6 +9,7 @@ import {
   renderSymbol,
   searchSymbols
 } from "../dist/index.js";
+import * as sidcKit from "../dist/index.js";
 import { curatedSymbols } from "../dist/data/catalog/index.js";
 
 const infantryPlatoonSidc = "130310001412110000000000000000";
@@ -75,6 +76,17 @@ function buildInputFor(parts) {
 
   return input;
 }
+
+test("public runtime facade exposes the intended API", () => {
+  assert.deepEqual(Object.keys(sidcKit).sort(), [
+    "SidcKitError",
+    "buildSidc",
+    "explainSidc",
+    "identifySymbol",
+    "renderSymbol",
+    "searchSymbols"
+  ]);
+});
 
 test("renderSymbol returns SVG for a known SIDC", () => {
   const result = renderSymbol(infantryPlatoonSidc, { size: 40 });
