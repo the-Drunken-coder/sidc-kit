@@ -41,21 +41,13 @@ function buildAmbiguitySuggestion(wanted: Record<string, string>, matches: reado
     return "The provided parts are still ambiguous.";
   }
 
-  return `Add ${formatPartList(helpfulKeys)}.`;
+  if (helpfulKeys.length === 1) {
+    return `Add ${helpfulKeys[0]}.`;
+  }
+
+  return `Add enough distinguishing parts from: ${helpfulKeys.join(", ")}.`;
 }
 
 function hasVariation(matches: readonly CuratedSymbol[], key: DisambiguatingPartKey): boolean {
   return new Set(matches.map((match) => normalizeParts(match.parts)[key] ?? "")).size > 1;
-}
-
-function formatPartList(parts: readonly string[]): string {
-  if (parts.length === 1) {
-    return parts[0];
-  }
-
-  if (parts.length === 2) {
-    return `${parts[0]} or ${parts[1]}`;
-  }
-
-  return `${parts.slice(0, -1).join(", ")}, or ${parts[parts.length - 1]}`;
 }
