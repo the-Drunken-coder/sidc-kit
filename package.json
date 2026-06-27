@@ -1,6 +1,6 @@
 {
   "name": "sidc-kit",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "A small TypeScript toolkit for rendering SIDCs and working with curated SIDC semantics.",
   "type": "module",
   "sideEffects": false,
