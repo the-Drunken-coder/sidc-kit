@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.4.0](https://github.com/the-Drunken-coder/sidc-kit/compare/v0.3.2...v0.4.0) (2026-06-27)
+
+
+### Features
+
+* add curated fixture generator ([d569f65](https://github.com/the-Drunken-coder/sidc-kit/commit/d569f6540ab9e04c7b50e8c93999e86403f26d0a))
+* add partial SIDC decomposition ([8bab13d](https://github.com/the-Drunken-coder/sidc-kit/commit/8bab13d789cda122757da49048327b41094d903b))
+* add reverse lookup v0 ([54dbdd7](https://github.com/the-Drunken-coder/sidc-kit/commit/54dbdd79f2a4d2bbb907c13e9f4f4313c8d7bed2))
+* add sidc-kit CLI ([e5679df](https://github.com/the-Drunken-coder/sidc-kit/commit/e5679df0f75d3c802a58281ee81c44920239da1f))
+* expand curated SIDC catalog ([67c9a93](https://github.com/the-Drunken-coder/sidc-kit/commit/67c9a93274b7967a9be5cf2670225c1fbb7f09a5))
+* improve symbol search ranking ([1143ff9](https://github.com/the-Drunken-coder/sidc-kit/commit/1143ff9c274b78637edb3ba2888ce7d0615161d8))
+* integrate SIDC Kit feature stack ([7106767](https://github.com/the-Drunken-coder/sidc-kit/commit/71067670927c3110b042ff2ac09ef3e9c2f15cc8))
+* verify browser bundle consumption ([a807142](https://github.com/the-Drunken-coder/sidc-kit/commit/a8071429c635003830f4476034c2896373960500))
+
+
+### Bug Fixes
+
+* address integrated PR review findings ([408e1f9](https://github.com/the-Drunken-coder/sidc-kit/commit/408e1f9a6fe9df70a7957bde56722809da9e9b84))
+* address integrated review findings ([2124ebf](https://github.com/the-Drunken-coder/sidc-kit/commit/2124ebf2cdb5928e535a7ed568e6f08b2c23c69d))
+* avoid unnecessary reverse lookup scoring ([501bf65](https://github.com/the-Drunken-coder/sidc-kit/commit/501bf65d5ae6819c446cdba74d88d545eca2c25d))
+* clarify ambiguous build suggestions ([c09bfca](https://github.com/the-Drunken-coder/sidc-kit/commit/c09bfcac04fee14dc8debdfb1479150fe510568e))
+* guard identify candidate rendering ([01e2ebe](https://github.com/the-Drunken-coder/sidc-kit/commit/01e2ebecbabe54ad2cb0cfbe03feffe694aabcd1))
+* harden CLI argument handling ([dd979ce](https://github.com/the-Drunken-coder/sidc-kit/commit/dd979ce1eb3f44e0661dd2269714111d3544563a))
+* harden fixture generator checks ([d09cad5](https://github.com/the-Drunken-coder/sidc-kit/commit/d09cad5fa623930cdfd56404fa2e70ad17d661c5))
+* harden reverse lookup matching ([a307b1b](https://github.com/the-Drunken-coder/sidc-kit/commit/a307b1bc9a1b9a9411a1a9d8aa37db2889d70177))
+* support base64 svg data urls ([9902157](https://github.com/the-Drunken-coder/sidc-kit/commit/9902157eb3f98429c4949a733703b295db647a3e))
+* tighten partial SIDC coverage ([b219a74](https://github.com/the-Drunken-coder/sidc-kit/commit/b219a74d985f9ed5415382bf79ba1d35fce6c1e4))
+
 ## [0.3.2](https://github.com/the-Drunken-coder/sidc-kit/compare/v0.3.1...v0.3.2) (2026-06-25)
 
 
