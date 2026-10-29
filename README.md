@@ -139,6 +139,16 @@ Partial decomposition is intentionally limited to affiliation, symbol set, statu
 
 Image-based reverse lookup is intentionally deferred.
 
+## Ridgeline integration
+
+The [Ridgeline playground](https://github.com/the-Drunken-coder/Ridgeline#run-locally)
+is one consumer. Its optional SIDC scenario currently pins the published `0.3.2`
+package, which can have a smaller catalog than this repository's unreleased main.
+It demonstrates search, SVG rendering, placement and explanation through Ridgeline's
+ordinary feature/icon API. SIDC Kit is not a Ridgeline runtime dependency.
+The demo does not implement structured building, reverse lookup, symbol editing or
+persistence. Those demo limits are separate from the APIs documented above.
+
 ## Changelog
 
 Release history is maintained in [`CHANGELOG.md`](./CHANGELOG.md) and GitHub Releases. The npm package includes `CHANGELOG.md` so published artifacts carry the release history.
