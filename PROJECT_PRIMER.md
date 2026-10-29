@@ -4,7 +4,10 @@
 
 This project is a JavaScript/TypeScript toolkit for working with military Symbol Identification Codes (SIDCs). It should make MIL-STD-2525 and STANAG APP-6 symbols easier to search, explain, build, render, and eventually identify from images.
 
-The likely package name is `sidc-kit`.
+The package is published as `sidc-kit`. This primer preserves the design rationale;
+the [README](README.md) owns the current API and supported input/coverage limits.
+The implemented reverse lookup accepts clean SVG renderings within the curated
+fixture set. Screenshot, photo and raster-image recognition remain deferred.
 
 ## Core Principle
 
@@ -23,7 +26,7 @@ Build on top of the MIT-licensed `milsymbol` package rather than forking it firs
 - SIDC construction helpers
 - aliases and normalized names for LLM/tool lookup
 - a cleaner public API for common workflows
-- optional reverse lookup from an icon image to likely SIDC candidates
+- deterministic reverse lookup from clean SVG renderings to curated SIDC candidates
 
 Forking `milsymbol` is a last resort, not the starting point. Only consider it if package exports, private tables, rendering bugs, or stability requirements make a wrapper genuinely awkward.
 
@@ -41,7 +44,7 @@ buildSidc({
   echelon: "platoon",
 });
 renderSymbol("130310001412110000000000000000");
-identifySymbol(imageInput);
+identifySymbol(svgString);
 ```
 
 `identifySymbol` should return ranked candidates with confidence, not pretend every icon has one exact answer. Multiple SIDCs can render identically or nearly identically depending on visible fields, modifiers, and rendering style.
@@ -105,14 +108,15 @@ For early versions, prefer simple lexical search and deterministic generated fix
 
 ## Reverse Lookup Guidance
 
-Reverse lookup should start with generated canonical fixtures:
+Reverse lookup v0 compares clean inline SVG or a percent-encoded SVG data URL
+against normalized `milsymbol` renderings from the curated fixture set. It returns
+ranked candidates with evidence and refuses to invent a SIDC for weak matches.
+See [the current contract](README.md#identifysymbolinput-options) for confidence
+thresholds, size bounds and unsupported inputs.
 
-1. Generate normalized SVG and PNG images from known SIDCs.
-2. Normalize incoming images for size, padding, colors, and stroke width.
-3. Compare against known renderings.
-4. Return ranked candidates with evidence.
-
-Do not overpromise screenshot or arbitrary-photo recognition in the first version. Clean rendered icons are the practical first target.
+PNG/JPEG, screenshots, photos, scans, cropped symbols and arbitrary symbols outside
+the curated set are not supported. Image normalization and broader recognition are
+future possibilities, not implemented features or an approved expansion.
 
 ## Quality Bar
 
